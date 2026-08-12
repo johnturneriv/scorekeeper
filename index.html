@@ -612,7 +612,7 @@
         ================================================== */
 
         let game = null;
-
+        let newRowTimer = null;
 
         /* ==================================================
         ELEMENT REFERENCES
@@ -959,27 +959,36 @@
                 return;
             }
 
-            // If someone has reached the winning score,
-            // update the winner highlight but DO NOT
-            // create another row.
-            if (determineWinner()) {
-                renderGame();
-                return;
-            }
+            window.clearTimeout(newRowTimer);
 
-            // Only create a new row if this is the last one.
-            if (handIndex === game.hands.length - 1) {
+            newRowTimer = window.setTimeout(() => {
 
-                game.hands.push(createEmptyHand());
+                // Make sure the hand is still complete.
+                if (!isHandComplete(game.hands[handIndex])) {
+                    return;
+                }
 
-                renderGame();
+                // If someone has won, just update the UI.
+                if (determineWinner()) {
+                    renderGame();
+                    return;
+                }
 
-                focusScoreCell(
-                    game.hands.length - 1,
-                    0
-                );
+                // Only add a new row if this is still the last hand.
+                if (handIndex === game.hands.length - 1) {
 
-            }
+                    game.hands.push(createEmptyHand());
+
+                    renderGame();
+
+                    focusScoreCell(
+                        game.hands.length - 1,
+                        0
+                    );
+
+                }
+
+            }, 600);
 
         }
 
