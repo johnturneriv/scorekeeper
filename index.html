@@ -1,1 +1,1441 @@
 
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+
+    <title>Scorecard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Raleway:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --background: #f4f4f2;
+            --card: #ffffff;
+            --text: #171717;
+            --muted: #777777;
+            --border: #ddddda;
+            --border-strong: #222222;
+            --input-background: #ffffff;
+            --hover: #f2f2ef;
+            --danger: #b42318;
+
+            --radius: 14px;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        html,
+        body {
+            margin: 0;
+            min-height: 100%;
+        }
+
+        body {
+            font-family: "Raleway", sans-serif;
+            background: var(--background);
+            color: var(--text);
+        }
+
+        button,
+        input {
+            font: inherit;
+        }
+
+        button {
+            cursor: pointer;
+        }
+
+        /* --------------------------------------------------
+    APP
+    -------------------------------------------------- */
+
+        .app-shell {
+            width: min(100%, 720px);
+            margin: 0 auto;
+            padding:
+                max(24px, env(safe-area-inset-top)) 16px max(30px, env(safe-area-inset-bottom));
+        }
+
+        .game-header {
+            position: relative;
+
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+
+            margin-bottom: 18px;
+        }
+
+        .game-header h1 {
+            margin: 0;
+            font-size: 28px;
+            line-height: 1.1;
+        }
+
+        .game-status {
+            margin: 6px 0 0;
+            color: var(--muted);
+            font-size: 14px;
+        }
+
+        /* --------------------------------------------------
+    MENU
+    -------------------------------------------------- */
+
+        .menu-button {
+            width: 44px;
+            height: 44px;
+
+            border: 0;
+            border-radius: 50%;
+
+            background: transparent;
+            color: var(--text);
+
+            font-size: 30px;
+            line-height: 1;
+        }
+
+        .menu-button:hover {
+            background: rgba(0, 0, 0, 0.05);
+        }
+
+        .game-menu {
+            position: absolute;
+            z-index: 20;
+            top: 52px;
+            right: 0;
+
+            width: 205px;
+
+            padding: 8px;
+
+            background: #ffffff;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+
+            box-shadow:
+                0 12px 35px rgba(0, 0, 0, 0.13);
+        }
+
+        .game-menu button {
+            display: block;
+            width: 100%;
+
+            padding: 11px 12px;
+
+            border: 0;
+            border-radius: 8px;
+
+            background: transparent;
+            color: var(--text);
+
+            text-align: left;
+        }
+
+        .game-menu button:hover {
+            background: var(--hover);
+        }
+
+        .game-menu .danger {
+            color: var(--danger);
+        }
+
+        .menu-divider {
+            height: 1px;
+            margin: 6px 4px;
+
+            background: var(--border);
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        /* --------------------------------------------------
+    SCORECARD
+    -------------------------------------------------- */
+
+        .scorecard-wrapper {
+            overflow: hidden;
+
+            background: var(--card);
+
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+
+            box-shadow:
+                0 2px 8px rgba(0, 0, 0, 0.04);
+        }
+
+        .scorecard {
+            width: 100%;
+        }
+
+        .score-scroll-area {
+            max-height: calc(100vh - 245px);
+            min-height: 220px;
+
+            overflow-y: auto;
+        }
+
+        /* --------------------------------------------------
+    GRID
+    -------------------------------------------------- */
+
+        .player-grid,
+        .hand-row,
+        .total-row {
+            display: grid;
+
+            grid-template-columns:
+                repeat(var(--player-count), minmax(0, 1fr));
+        }
+
+        .player-grid {
+            position: sticky;
+            top: 0;
+            z-index: 5;
+
+            background: var(--card);
+
+            border-bottom: 1px solid var(--border);
+        }
+
+        .player-header {
+            min-width: 0;
+
+            padding: 15px 8px 13px;
+
+            border-right: 1px solid var(--border);
+
+            text-align: center;
+        }
+
+        .player-header:last-child {
+            border-right: 0;
+        }
+
+        .player-name {
+            overflow: hidden;
+
+            font-weight: 650;
+
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .hand-row {
+            border-bottom: 1px solid var(--border);
+        }
+
+        .score-cell {
+            min-width: 0;
+            height: 52px;
+
+            padding: 0;
+
+            border: 0;
+            border-right: 1px solid var(--border);
+
+            background: var(--input-background);
+
+            color: var(--text);
+
+            text-align: center;
+
+            outline: none;
+
+            -moz-appearance: textfield;
+        }
+
+        .score-cell:last-child {
+            border-right: 0;
+        }
+
+        .score-cell::-webkit-inner-spin-button,
+        .score-cell::-webkit-outer-spin-button {
+            margin: 0;
+            -webkit-appearance: none;
+        }
+
+        .score-cell:focus {
+            position: relative;
+            z-index: 2;
+
+            box-shadow:
+                inset 0 0 0 2px #222222;
+        }
+
+        .score-cell::placeholder {
+            color: #c7c7c3;
+        }
+
+        /* --------------------------------------------------
+    TOTALS
+    -------------------------------------------------- */
+
+        .total-section {
+            position: sticky;
+            bottom: 0;
+            z-index: 6;
+
+            background: var(--card);
+
+            border-top: 4px solid var(--border-strong);
+        }
+
+        .total-label {
+            padding: 8px 10px 4px;
+
+            color: var(--muted);
+
+            font-size: 11px;
+            font-weight: 700;
+
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+
+        .total-row {
+            background: #f6f6f3;
+        }
+
+        .total-cell {
+            min-width: 0;
+
+            padding: 14px 8px 17px;
+
+            border-right: 1px solid var(--border-strong);
+
+            font-size: 21px;
+            font-weight: 750;
+
+            text-align: center;
+        }
+
+        .total-cell:last-child {
+            border-right: 0;
+        }
+
+        /* --------------------------------------------------
+    STATUS MESSAGE
+    -------------------------------------------------- */
+
+        .message {
+            min-height: 28px;
+
+            padding: 12px 4px;
+
+            color: var(--muted);
+
+            font-size: 13px;
+
+            text-align: center;
+        }
+
+        /* --------------------------------------------------
+    MOBILE
+    -------------------------------------------------- */
+
+        @media (max-width: 520px) {
+
+            .app-shell {
+                padding-left: 10px;
+                padding-right: 10px;
+            }
+
+            .game-header h1 {
+                font-size: 24px;
+            }
+
+            .player-header {
+                padding-left: 4px;
+                padding-right: 4px;
+            }
+
+            .player-name {
+                font-size: 14px;
+            }
+
+            .score-cell {
+                height: 55px;
+                font-size: 18px;
+            }
+
+            .total-cell {
+                font-size: 19px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <main class="app-shell">
+
+        <header class="game-header">
+            <div>
+                <h1>gin rummy scorecard</h1>
+                <p id="gameStatus" class="game-status">Current Game</p>
+            </div>
+
+            <button id="menuButton" class="menu-button" type="button" aria-label="Game menu" aria-expanded="false">
+                ⋮
+            </button>
+
+            <div id="gameMenu" class="game-menu hidden">
+                <button type="button" data-action="save">
+                    Save Progress
+                </button>
+
+                <button type="button" data-action="pause">
+                    Pause Game
+                </button>
+
+                <button type="button" data-action="finish">
+                    Finish Game
+                </button>
+
+                <div class="menu-divider"></div>
+
+                <button type="button" data-action="add-player">
+                    Add Player
+                </button>
+
+                <button type="button" data-action="remove-player">
+                    Remove Player
+                </button>
+
+                <div class="menu-divider"></div>
+
+                <button type="button" data-action="settings">
+                    Settings
+                </button>
+
+                <button type="button" data-action="delete" class="danger">
+                    Delete Game
+                </button>
+            </div>
+        </header>
+
+        <section class="scorecard-wrapper">
+
+            <div id="scorecard" class="scorecard">
+                <!-- JavaScript builds the score grid here -->
+            </div>
+
+        </section>
+
+        <div id="message" class="message" aria-live="polite"></div>
+
+    </main>
+
+    <script>
+        /* ==================================================
+            GIN RUMMY SCOREKEEPER
+            CHECKPOINT 1
+        
+            UI:
+            - Score grid
+            - Enter moves to next player
+            - New row created automatically
+            - Totals remain below hands
+            - Game menu
+            - Add/remove players
+        
+            DATA:
+            - Game state is kept separate from drawing/UI
+            - Storage functions are isolated
+            - Firebase can replace the storage layer later
+            ================================================== */
+
+
+        /* ==================================================
+        CONFIG
+        ================================================== */
+
+        const APP_CONFIG = {
+            minPlayers: 2,
+            maxPlayers: 4,
+            defaultWinningScore: 500
+        };
+
+
+        /* ==================================================
+        GAME MODEL
+    
+        This is intentionally database-friendly.
+    
+        Later, the same object can be stored in Firebase
+        without rebuilding the scorecard logic.
+        ================================================== */
+
+        function createNewGame() {
+            const now = new Date().toISOString();
+
+            return {
+                id: createId(),
+
+                status: "active",
+
+                createdAt: now,
+                updatedAt: now,
+                finishedAt: null,
+
+                winningScore: APP_CONFIG.defaultWinningScore,
+
+                players: [
+                    {
+                        id: createId(),
+                        name: "Player 1"
+                    },
+                    {
+                        id: createId(),
+                        name: "Player 2"
+                    }
+                ],
+
+                hands: [
+                    createEmptyHand()
+                ],
+
+                winnerId: null,
+
+                currentLeaderId: null
+            };
+        }
+
+
+        function createEmptyHand() {
+            return {
+                id: createId(),
+                scores: {}
+            };
+        }
+
+
+        function createId() {
+            if (
+                typeof crypto !== "undefined" &&
+                typeof crypto.randomUUID === "function"
+            ) {
+                return crypto.randomUUID();
+            }
+
+            return (
+                Date.now().toString(36) +
+                Math.random().toString(36).slice(2)
+            );
+        }
+
+
+        /* ==================================================
+        DATABASE / STORAGE LAYER
+    
+        IMPORTANT:
+    
+        UI code does NOT directly use localStorage.
+    
+        These functions are our storage boundary.
+    
+        When Firebase is added later, we replace these
+        functions instead of rewriting the app.
+        ================================================== */
+
+        const gameRepository = {
+
+            async save(game) {
+                const gameToSave = {
+                    ...game,
+                    updatedAt: new Date().toISOString()
+                };
+
+                localStorage.setItem(
+                    "ginRummyCurrentGame",
+                    JSON.stringify(gameToSave)
+                );
+
+                return gameToSave;
+            },
+
+
+            async loadCurrentGame() {
+                const saved = localStorage.getItem(
+                    "ginRummyCurrentGame"
+                );
+
+                if (!saved) {
+                    return null;
+                }
+
+                try {
+                    return JSON.parse(saved);
+                } catch {
+                    return null;
+                }
+            },
+
+
+            async archive(game) {
+                const savedGames = JSON.parse(
+                    localStorage.getItem("ginRummyFinishedGames") ||
+                    "[]"
+                );
+
+                savedGames.push(game);
+
+                localStorage.setItem(
+                    "ginRummyFinishedGames",
+                    JSON.stringify(savedGames)
+                );
+            },
+
+
+            async deleteCurrentGame() {
+                localStorage.removeItem(
+                    "ginRummyCurrentGame"
+                );
+            }
+
+        };
+
+
+        /* ==================================================
+        APP STATE
+    
+        game is the single source of truth.
+        ================================================== */
+
+        let game = null;
+
+
+        /* ==================================================
+        ELEMENT REFERENCES
+        ================================================== */
+
+        const scorecardElement =
+            document.getElementById("scorecard");
+
+        const menuButton =
+            document.getElementById("menuButton");
+
+        const gameMenu =
+            document.getElementById("gameMenu");
+
+        const gameStatusElement =
+            document.getElementById("gameStatus");
+
+        const messageElement =
+            document.getElementById("message");
+
+
+        /* ==================================================
+        GAME CALCULATIONS
+    
+        No DOM access in these functions.
+        ================================================== */
+
+        function getPlayerTotal(playerId) {
+            return game.hands.reduce(
+                (total, hand) => {
+                    const value = hand.scores[playerId];
+
+                    if (
+                        value === undefined ||
+                        value === null ||
+                        value === ""
+                    ) {
+                        return total;
+                    }
+
+                    return total + Number(value);
+                },
+                0
+            );
+        }
+
+
+        function getTotals() {
+            const totals = {};
+
+            for (const player of game.players) {
+                totals[player.id] =
+                    getPlayerTotal(player.id);
+            }
+
+            return totals;
+        }
+
+
+        function isHandComplete(hand) {
+            return game.players.every(player => {
+                const value = hand.scores[player.id];
+
+                return (
+                    value !== undefined &&
+                    value !== null &&
+                    value !== ""
+                );
+            });
+        }
+
+
+        function ensureBlankHandExists() {
+            const lastHand =
+                game.hands[game.hands.length - 1];
+
+            if (!lastHand || isHandComplete(lastHand)) {
+                game.hands.push(createEmptyHand());
+            }
+        }
+
+
+        function determineWinner() {
+
+            const totals = getTotals();
+
+            let winner = null;
+            let highestScore = -Infinity;
+
+            for (const player of game.players) {
+
+                const score = totals[player.id];
+
+                if (score > highestScore) {
+                    highestScore = score;
+                    winner = player;
+                }
+            }
+
+            if (highestScore >= game.winningScore) {
+                game.currentLeaderId = winner.id;
+                return winner;
+            }
+
+            game.currentLeaderId = null;
+            return null;
+        }
+
+
+        /* ==================================================
+        RENDERING
+    
+        Drawing only reads game state.
+        ================================================== */
+
+        function renderGame() {
+            scorecardElement.innerHTML = "";
+
+            scorecardElement.style.setProperty(
+                "--player-count",
+                game.players.length
+            );
+
+            renderPlayerHeaders();
+
+            const scrollArea =
+                document.createElement("div");
+
+            scrollArea.className =
+                "score-scroll-area";
+
+            renderHands(scrollArea);
+
+            scorecardElement.appendChild(
+                scrollArea
+            );
+
+            renderTotals();
+
+            renderGameStatus();
+        }
+
+
+        function renderPlayerHeaders() {
+
+            const header = document.createElement("div");
+            header.className = "player-grid";
+
+            determineWinner();
+
+            for (const player of game.players) {
+                const playerHeader = document.createElement("div");
+                playerHeader.className = "player-header";
+
+                if (player.id === game.currentLeaderId) {
+                    playerHeader.style.background = "rgba(70,140,255,0.10)";
+                }
+
+
+                const playerName = document.createElement("div");
+                playerName.className = "player-name";
+
+                playerName.textContent = player.name.toLowerCase();
+                playerName.title = "Click to rename";
+
+                playerName.addEventListener(
+                    "click",
+                    () => renamePlayer(player.id)
+                );
+
+                playerHeader.appendChild(playerName);
+
+                header.appendChild(playerHeader);
+            }
+
+            scorecardElement.appendChild(header);
+        }
+
+        function renderHands(container) {
+
+            determineWinner();
+
+            game.hands.forEach((hand, handIndex) => {
+
+                const row = document.createElement("div");
+                row.className = "hand-row";
+
+                game.players.forEach((player, playerIndex) => {
+
+                    const input = document.createElement("input");
+
+                    input.className = "score-cell";
+
+                    if (player.id === game.currentLeaderId) {
+                        input.style.background = "rgba(70,140,255,0.10)";
+                    }
+
+                    input.type = "number";
+                    input.inputMode = "numeric";
+                    input.autocomplete = "off";
+                    input.placeholder = "—";
+
+                    input.dataset.handIndex = handIndex;
+                    input.dataset.playerIndex = playerIndex;
+                    input.dataset.playerId = player.id;
+
+                    const score = hand.scores[player.id];
+
+                    input.value =
+                        score === undefined
+                            ? ""
+                            : score;
+
+                    input.addEventListener(
+                        "input",
+                        handleScoreInput
+                    );
+
+                    input.addEventListener(
+                        "keydown",
+                        handleScoreKeyDown
+                    );
+
+                    row.appendChild(input);
+
+                });
+
+                container.appendChild(row);
+
+            });
+
+        }
+        function renderTotals() {
+
+            determineWinner();
+
+            const totalSection =
+                document.createElement("div");
+
+            totalSection.className =
+                "total-section";
+
+            const label =
+                document.createElement("div");
+
+            label.className =
+                "total-label";
+
+            label.textContent = "total";
+
+            const totalRow =
+                document.createElement("div");
+
+            totalRow.className =
+                "total-row";
+
+            const totals = getTotals();
+
+            for (const player of game.players) {
+
+                const total =
+                    document.createElement("div");
+
+                total.className =
+                    "total-cell";
+
+                if (player.id === game.currentLeaderId) {
+                    total.style.background =
+                        "rgba(70,140,255,0.10)";
+                }
+
+                total.textContent =
+                    totals[player.id] +
+                    (player.id === game.currentLeaderId ? " ⭐" : "");
+
+                totalRow.appendChild(total);
+            }
+
+            totalSection.appendChild(label);
+            totalSection.appendChild(totalRow);
+
+            scorecardElement.appendChild(totalSection);
+        }
+
+        function renderGameStatus() {
+            if (game.status === "paused") {
+                gameStatusElement.textContent =
+                    "game paused";
+
+                return;
+            }
+
+            if (game.status === "finished") {
+                gameStatusElement.textContent =
+                    "finished game";
+
+                return;
+            }
+
+            gameStatusElement.textContent =
+                "current game";
+        }
+
+
+        /* ==================================================
+        SCORE ENTRY
+        ================================================== */
+
+        function handleScoreInput(event) {
+            const input = event.target;
+
+            const handIndex =
+                Number(input.dataset.handIndex);
+
+            const playerId =
+                input.dataset.playerId;
+
+            let value = input.value;
+
+            if (value === "") {
+                delete game.hands[
+                    handIndex
+                ].scores[playerId];
+            } else {
+                value = Number(value);
+
+                game.hands[
+                    handIndex
+                ].scores[playerId] = value;
+            }
+
+            updateTotalsOnly();
+        }
+
+
+        function handleScoreKeyDown(event) {
+            if (event.key !== "Enter") {
+                return;
+            }
+
+            event.preventDefault();
+
+            const input = event.target;
+
+            const handIndex =
+                Number(input.dataset.handIndex);
+
+            const playerIndex =
+                Number(input.dataset.playerIndex);
+
+            moveToNextScoreCell(
+                handIndex,
+                playerIndex
+            );
+        }
+
+
+        function moveToNextScoreCell(
+            handIndex,
+            playerIndex
+        ) {
+
+            const isLastPlayer =
+                playerIndex ===
+                game.players.length - 1;
+
+            if (!isLastPlayer) {
+                focusScoreCell(
+                    handIndex,
+                    playerIndex + 1
+                );
+
+                return;
+            }
+
+            const currentHand =
+                game.hands[handIndex];
+
+            if (isHandComplete(currentHand)) {
+
+                const wasLastHand =
+                    handIndex ===
+                    game.hands.length - 1;
+
+                if (wasLastHand) {
+                    game.hands.push(
+                        createEmptyHand()
+                    );
+
+                    renderGame();
+                }
+
+                focusScoreCell(
+                    handIndex + 1,
+                    0
+                );
+
+                return;
+            }
+
+            focusFirstEmptyCell(
+                handIndex
+            );
+        }
+
+
+        function focusScoreCell(
+            handIndex,
+            playerIndex
+        ) {
+
+            requestAnimationFrame(() => {
+
+                const selector =
+                    `.score-cell[data-hand-index="${handIndex}"]` +
+                    `[data-player-index="${playerIndex}"]`;
+
+                const input =
+                    document.querySelector(selector);
+
+                if (input) {
+                    input.focus();
+                    input.select();
+                }
+
+            });
+        }
+
+
+        function focusFirstEmptyCell(handIndex) {
+            const hand =
+                game.hands[handIndex];
+
+            for (
+                let playerIndex = 0;
+                playerIndex < game.players.length; playerIndex++) {
+                const player = game.players[playerIndex]; const
+                    value = hand.scores[player.id]; if (value === undefined || value === "") {
+                        focusScoreCell(handIndex, playerIndex);
+                        return;
+                    }
+            }
+        } /*==================================================LIVE TOTAL UPDATE Avoids rebuilding the entire
+        scorecard while someone is typing.==================================================*/ function
+            updateTotalsOnly() {
+            const totals = getTotals(); const cells = document.querySelectorAll(".total-cell");
+            game.players.forEach((player, index) => {
+
+                if (cells[index]) {
+                    cells[index].textContent =
+                        totals[player.id];
+                }
+
+            }
+            );
+        }
+
+
+        /* ==================================================
+        PLAYER MANAGEMENT
+        ================================================== */
+
+        function addPlayer() {
+            if (
+                game.players.length >=
+                APP_CONFIG.maxPlayers
+            ) {
+                showMessage(
+                    "Maximum of 4 players."
+                );
+
+                return;
+            }
+
+            const defaultName =
+                `Player ${game.players.length + 1}`;
+
+            const name = window.prompt(
+                "Player name:",
+                defaultName
+            );
+
+            if (!name || !name.trim()) {
+                return;
+            }
+
+            const player = {
+                id: createId(),
+                name: name.trim()
+            };
+
+            game.players.push(player);
+
+            ensureBlankHandExists();
+
+            renderGame();
+
+            showMessage(
+                `${player.name} added.`
+            );
+        }
+
+
+        function removePlayer() {
+            if (
+                game.players.length <= APP_CONFIG.minPlayers) { showMessage("A game needs at least 2 players."); return; }
+            const playerNames = game.players.map((player, index) =>
+                `${index + 1}. ${player.name}`
+            )
+                .join("\n");
+
+            const response = window.prompt(
+                `Enter player number to remove:\n\n${playerNames}`
+            );
+
+            if (!response) {
+                return;
+            }
+
+            const playerIndex =
+                Number(response) - 1;
+
+            if (
+                playerIndex < 0 || playerIndex >= game.players.length
+            ) {
+                showMessage(
+                    "That player number is not valid."
+                );
+
+                return;
+            }
+
+            const removed =
+                game.players[playerIndex];
+
+            const confirmed =
+                window.confirm(
+                    `Remove ${removed.name} from this game?`
+                );
+
+            if (!confirmed) {
+                return;
+            }
+
+            game.players.splice(
+                playerIndex,
+                1
+            );
+
+            for (const hand of game.hands) {
+                delete hand.scores[
+                    removed.id
+                ];
+            }
+
+            renderGame();
+
+            showMessage(
+                `${removed.name} removed.`
+            );
+        }
+
+
+        function renamePlayer(playerId) {
+            const player =
+                game.players.find(
+                    player =>
+                        player.id === playerId
+                );
+
+            if (!player) {
+                return;
+            }
+
+            const name = window.prompt(
+                "Player name:",
+                player.name
+            );
+
+            if (!name || !name.trim()) {
+                return;
+            }
+
+            player.name =
+                name.trim();
+
+            renderGame();
+        }
+
+
+        /* ==================================================
+        GAME ACTIONS
+        ================================================== */
+
+        async function saveProgress() {
+            game.status = "active";
+
+            game =
+                await gameRepository.save(game);
+
+            renderGameStatus();
+
+            showMessage(
+                "Game saved."
+            );
+        }
+
+
+        async function pauseGame() {
+            game.status = "paused";
+
+            game =
+                await gameRepository.save(game);
+
+            renderGameStatus();
+
+            showMessage(
+                "Game paused and saved."
+            );
+        }
+
+
+        async function finishGame() {
+            const completedHands =
+                game.hands.filter(
+                    hand => isHandComplete(hand)
+                );
+
+            if (completedHands.length === 0) {
+                showMessage(
+                    "Enter at least one complete hand first."
+                );
+
+                return;
+            }
+
+            const winner = determineWinner();
+
+            if (!winner) {
+                showMessage(
+                    `No player has reached ${game.winningScore} points yet.`
+                );
+                return;
+            }
+
+            const confirmed =
+                window.confirm(
+                    `${winner ? winner.name : "Nobody"} currently has the highest qualifying score.`
+                );
+
+            if (!confirmed) {
+                return;
+            }
+
+            /*
+            Remove the unused blank row before
+            permanently saving the finished game.
+            */
+
+            game.hands =
+                game.hands.filter(
+                    hand => isHandComplete(hand)
+                );
+
+            game.status =
+                "finished";
+
+            game.finishedAt =
+                new Date().toISOString();
+
+            game.winnerId =
+                winner.id;
+
+            await gameRepository.archive(game);
+
+            await gameRepository.deleteCurrentGame();
+
+            renderGame();
+
+            showMessage(
+                `${winner.name} wins!`
+            );
+        }
+
+
+        async function deleteGame() {
+            const confirmed =
+                window.confirm(
+                    "Delete this game? This cannot be undone."
+                );
+
+            if (!confirmed) {
+                return;
+            }
+
+            await gameRepository.deleteCurrentGame();
+
+            game = createNewGame();
+
+            renderGame();
+
+            focusFirstScore();
+
+            showMessage(
+                "Game deleted."
+            );
+        }
+
+
+        function openSettings() {
+            const value =
+                window.prompt(
+                    "Winning score:",
+                    game.winningScore
+                );
+
+            if (!value) {
+                return;
+            }
+
+            const score =
+                Number(value);
+
+            if (
+                !Number.isFinite(score) ||
+                score <= 0) { showMessage("Enter a valid winning score."); return; } game.winningScore = score;
+            showMessage(`Winning score set to ${score}.`);
+        }
+        /*==================================================MENU==================================================*/
+        function toggleMenu() {
+            const isHidden = gameMenu.classList.contains("hidden");
+            gameMenu.classList.toggle("hidden"); menuButton.setAttribute("aria-expanded", String(isHidden)
+            );
+        } function closeMenu() {
+            gameMenu.classList.add("hidden");
+            menuButton.setAttribute("aria-expanded", "false");
+        } async function handleMenuAction(event) {
+            const button = event.target.closest("[data-action]"); if (!button) { return; } const
+                action = button.dataset.action; closeMenu(); switch (action) {
+                    case "save": await saveProgress();
+                        break; case "pause": await pauseGame(); break; case "finish": await finishGame(); break;
+                    case "add-player": addPlayer(); break; case "remove-player": removePlayer(); break;
+                    case "settings": openSettings(); break; case "delete": await deleteGame(); break;
+                }
+        }
+        /*==================================================HELPERS==================================================*/
+        function focusFirstScore() { focusScoreCell(0, 0); } function showMessage(message) {
+            messageElement.textContent = message; window.clearTimeout(showMessage.timeout);
+            showMessage.timeout = window.setTimeout(() => {
+                messageElement.textContent =
+                    "";
+            }, 2500);
+        }
+
+
+        /* ==================================================
+        INITIALIZATION
+        ================================================== */
+
+        async function initializeApp() {
+
+            const savedGame =
+                await gameRepository.loadCurrentGame();
+
+            if (
+                savedGame &&
+                savedGame.status !== "finished"
+            ) {
+                game = savedGame;
+
+                ensureBlankHandExists();
+            } else {
+                game = createNewGame();
+            }
+
+            renderGame();
+
+            focusFirstScore();
+        }
+
+
+        /* ==================================================
+        EVENTS
+        ================================================== */
+
+        menuButton.addEventListener(
+            "click",
+            event => {
+                event.stopPropagation();
+                toggleMenu();
+            }
+        );
+
+
+        gameMenu.addEventListener(
+            "click",
+            handleMenuAction
+        );
+
+
+        document.addEventListener(
+            "click",
+            event => {
+
+                if (
+                    !gameMenu.contains(event.target) &&
+                    event.target !== menuButton
+                ) {
+                    closeMenu();
+                }
+
+            }
+        );
+
+
+        /* ==================================================
+        START APP
+        ================================================== */
+
+        initializeApp();
+
+    </script>
+</body>
+
+</html>
