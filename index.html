@@ -921,29 +921,73 @@
             flex: 0 0 auto;
             display: inline-grid;
             place-items: center;
-            min-width: 20px;
+            width: 24px;
             height: 24px;
-            padding: 0 3px;
-            border: 1px solid var(--navy);
-            border-radius: 5px;
-            background: var(--card);
-            color: var(--navy);
-            font-size: 11px;
+            padding: 0;
+            border: 0;
+            background: transparent;
+            font-size: 17px;
             font-weight: 800;
             line-height: 1
         }
 
         body[data-theme="poker"] .leader-icon {
-            background: #d8b45f;
-            border-color: #f5dd94;
-            color: #082b22
+            width: 18px;
+            height: 26px;
+            padding: 0;
+            border: 1px solid #082b22;
+            border-radius: 3px;
+            background: #fff8e7;
+            color: #082b22;
+            font-family: Georgia, serif;
+            font-size: 9px;
+            font-weight: 800;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, .18)
         }
 
         body[data-theme="tropical"] .leader-icon {
-            background: #ffcf4a;
-            border-color: #e9a900;
-            color: #073b4c;
-            font-size: 14px
+            width: 24px;
+            height: 24px;
+            border: 0;
+            background: transparent;
+            font-size: 18px
+        }
+
+        .total-cell {
+            font-size: 22px;
+            font-weight: 800;
+            padding-top: 15px;
+            padding-bottom: 17px
+        }
+
+        body[data-theme="tropical"] .player-grid {
+            background: #80ddd4;
+            color: #073b4c
+        }
+
+        body[data-theme="tropical"] .round-number {
+            background: #ffd45c;
+            color: #073b4c
+        }
+
+        body[data-theme="tropical"] .score-cell {
+            background: #fff3b8;
+            color: #073b4c
+        }
+
+        body[data-theme="tropical"] .hand-row:nth-child(even) .score-cell {
+            background: #e0faf4
+        }
+
+        body[data-theme="tropical"] .total-section,
+        body[data-theme="tropical"] .total-row,
+        body[data-theme="tropical"] .total-cell {
+            background: #80ddd4;
+            color: #073b4c
+        }
+
+        body[data-theme="tropical"] .total-section {
+            border-top-color: #073b4c
         }
 
         /* PLAYER LIST / PICKER */
@@ -1250,9 +1294,9 @@
 
         function getLeaderIcon() {
             const theme = themeRepository.load();
-            if (theme === "poker") return "●●";
-            if (theme === "tropical") return "☀";
-            return "A♠"
+            if (theme === "poker") return "A♠";
+            if (theme === "tropical") return "😎";
+            return "💯"
         }
 
         function openThemePicker() {
@@ -1327,16 +1371,32 @@
                 container.appendChild(row)
             })
         }
-
         function renderTotals() {
-            const winner = determineWinner(), totals = getTotals(), section = document.createElement("div"); section.className = "total-section"; section.innerHTML = '<div class="total-label">total · tap a score to see points to 500</div>';
-            const row = document.createElement("div"); row.className = "total-row"; const spacer = document.createElement("div"); spacer.className = "total-spacer"; spacer.textContent = "Σ"; row.appendChild(spacer);
-            for (const p of game.players) {
-                const el = document.createElement("button"); el.type = "button"; el.className = "total-cell" + (p.id === winner?.id ? " winner" : ""); el.dataset.playerId = p.id; el.textContent = totals[p.id]; el.onclick = () => showPointsRemaining(el, p.id); row.appendChild(el)
-            }
-            section.appendChild(row); scorecardElement.appendChild(section)
-        }
+            const winner = determineWinner(),
+                totals = getTotals(),
+                section = document.createElement("div");
 
+            section.className = "total-section";
+
+            const row = document.createElement("div");
+            row.className = "total-row";
+
+            const spacer = document.createElement("div");
+            spacer.className = "total-spacer";
+            spacer.textContent = "Σ";
+            row.appendChild(spacer);
+
+            for (const p of game.players) {
+                const el = document.createElement("div");
+                el.className = "total-cell" + (p.id === winner?.id ? " winner" : "");
+                el.dataset.playerId = p.id;
+                el.textContent = totals[p.id];
+                row.appendChild(el)
+            }
+
+            section.appendChild(row);
+            scorecardElement.appendChild(section)
+        }
         function showPointsRemaining(el, playerId) {
             const remaining = Math.max(0, game.winningScore - getPlayerTotal(playerId));
             clearTimeout(el._remainingTimer); el.textContent = `${remaining} to go`;
