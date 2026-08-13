@@ -3,7 +3,8 @@
 
 <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
     <meta name="theme-color" content="#fbfaf8" />
     <title>Gin 500</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -33,8 +34,14 @@
         body {
             margin: 0;
             min-height: 100%;
+            max-width: 100%;
+            overflow-x: hidden;
             background: var(--bg);
             color: var(--navy)
+        }
+
+        html {
+            touch-action: pan-y
         }
 
         body {
@@ -67,7 +74,8 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 2px 54px 18px
+            min-height: 92px;
+            padding: 0 58px 8px
         }
 
         .brand {
@@ -76,7 +84,7 @@
         }
 
         .brand-suits {
-            font-size: 13px;
+            font-size: 16px;
             letter-spacing: 4px;
             text-align: center;
             margin: 0 0 3px 9px
@@ -88,7 +96,7 @@
 
         .brand-name {
             font-family: "Cormorant Garamond", serif;
-            font-size: 43px;
+            font-size: 52px;
             font-weight: 700;
             font-style: italic;
             letter-spacing: -2px
@@ -104,7 +112,7 @@
             justify-content: center;
             gap: 7px;
             margin-top: 8px;
-            font-size: 9px;
+            font-size: 10px;
             font-weight: 700;
             letter-spacing: 4px
         }
@@ -119,14 +127,14 @@
 
         .menu-button {
             position: absolute;
-            right: 4px;
-            top: 2px;
-            width: 44px;
-            height: 44px;
+            right: 2px;
+            top: 4px;
+            width: 50px;
+            height: 50px;
             border: 0;
             background: transparent;
             border-radius: 50%;
-            font-size: 28px
+            font-size: 32px
         }
 
         .menu-button:hover {
@@ -153,7 +161,12 @@
             border: 0;
             border-radius: 9px;
             background: transparent;
-            text-align: left
+            text-align: left;
+            font-family: Inter, system-ui, sans-serif;
+            font-size: 14px;
+            font-weight: 500;
+            font-style: normal;
+            text-transform: uppercase
         }
 
         .game-menu button:hover {
@@ -198,9 +211,6 @@
 
         /* SCORECARD */
         .page-heading {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
             margin: 5px 2px 14px
         }
 
@@ -213,39 +223,23 @@
             letter-spacing: -.4px
         }
 
-        .score-actions {
-            display: flex;
-            gap: 8px;
-            align-items: center
-        }
-
-        .add-column-btn {
-            width: 34px;
-            height: 34px;
-            border: 1px solid var(--line);
-            background: #fff;
-            border-radius: 10px;
-            font-size: 21px;
-            line-height: 1;
-            font-weight: 500
-        }
-
-        .add-column-btn:hover {
-            background: var(--soft)
-        }
-
-        .outline-danger {
-            height: 34px;
-            border: 1px solid var(--red);
-            background: #fff;
-            color: var(--red);
-            border-radius: 10px;
-            padding: 0 14px;
-            font-weight: 700
-        }
-
         .scorecard-wrapper {
             overflow: hidden
+        }
+
+        .score-horizontal-scroll {
+            width: 100%;
+            overflow-x: auto;
+            overflow-y: visible;
+            -webkit-overflow-scrolling: touch
+        }
+
+        .scorecard-inner {
+            min-width: 100%
+        }
+
+        .scorecard-inner.wide {
+            min-width: calc(40px + (var(--player-count) * 92px))
         }
 
         .score-scroll-area {
@@ -262,9 +256,6 @@
         }
 
         .player-grid {
-            position: sticky;
-            top: 0;
-            z-index: 5;
             background: #fff;
             border-bottom: 1px solid var(--line)
         }
@@ -279,10 +270,42 @@
 
         .player-header {
             border-left: 1px solid var(--line);
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
+            min-width: 0;
             cursor: pointer
+        }
+
+        .player-name-wrap {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            min-width: 0
+        }
+
+        .player-name-text {
+            display: block;
+            min-width: 0;
+            max-width: 100%;
+            overflow: hidden;
+            white-space: nowrap;
+            font-size: 14px;
+            line-height: 1.1;
+            font-weight: 800
+        }
+
+        .leader-ace {
+            flex: 0 0 auto;
+            display: inline-grid;
+            place-items: center;
+            width: 18px;
+            height: 24px;
+            border: 1px solid var(--navy);
+            border-radius: 3px;
+            background: #fff;
+            color: var(--navy);
+            font-size: 8px;
+            font-weight: 800;
+            line-height: 1
         }
 
         .player-header:hover {
@@ -370,10 +393,15 @@
 
         .total-cell {
             padding: 13px 4px 15px;
+            border: 0;
             border-left: 1px solid var(--line);
+            background: #fafafa;
+            color: var(--navy);
             text-align: center;
             font-size: 18px;
-            font-weight: 800
+            font-weight: 800;
+            cursor: pointer;
+            white-space: nowrap
         }
 
         .total-cell.winner {
@@ -381,54 +409,32 @@
             background: #fff5f3
         }
 
-        .winner-total-wrap {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 5px
-        }
-
-        .ace-card {
-            display: inline-grid;
-            place-items: center;
-            width: 20px;
-            height: 27px;
-            border: 1px solid var(--navy);
-            border-radius: 3px;
-            background: #fff;
-            color: var(--navy);
-            font-size: 9px;
-            font-weight: 800;
-            line-height: 1
-        }
-
-        .score-footer {
+        .score-bottom-actions {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            margin-top: 16px;
-            overflow: hidden
+            gap: 10px;
+            margin-top: 14px
         }
 
-        .stat-mini {
-            padding: 16px;
-            text-align: center
-        }
-
-        .stat-mini+.stat-mini {
-            border-left: 1px solid var(--line)
-        }
-
-        .stat-mini label {
-            display: block;
-            font-size: 9px;
+        .score-bottom-actions button {
+            min-height: 44px;
+            border-radius: 11px;
+            font-family: Inter, system-ui, sans-serif;
+            font-size: 14px;
             font-weight: 800;
-            letter-spacing: .04em
+            font-style: normal;
+            text-transform: uppercase
         }
 
-        .stat-mini strong {
-            display: block;
-            margin-top: 5px;
-            font-size: 18px;
+        .add-player-bottom {
+            border: 1px solid var(--navy);
+            background: #fff;
+            color: var(--navy)
+        }
+
+        .end-game-bottom {
+            border: 1px solid var(--red);
+            background: #fff;
             color: var(--red)
         }
 
@@ -441,29 +447,25 @@
         }
 
         /* STATS - retained from baseline */
-        .stats-title {
-            display: flex;
-            gap: 12px;
-            align-items: center;
-            margin: 8px 4px 16px;
-            font-size: 23px;
-            font-weight: 800
-        }
 
         .tabs {
             display: grid;
-            grid-template-columns: repeat(3, 1fr);
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 0;
             overflow: hidden;
             margin-bottom: 18px
         }
 
         .tab {
-            padding: 12px 5px;
+            width: 100%;
+            min-width: 0;
+            padding: 12px 4px;
             border: 0;
             border-right: 1px solid var(--line);
             background: #fff;
-            font-size: 12px;
-            font-weight: 700
+            font-size: 14px;
+            font-weight: 800;
+            white-space: nowrap
         }
 
         .tab:last-child {
@@ -555,107 +557,184 @@
             font-size: 18px
         }
 
-        /* GAMES */
-        .games-list {
-            padding: 8px 18px
+
+
+        body[data-theme="poker"] {
+            --bg: #0d3b2e;
+            --card: #123f34;
+            --navy: #f6f1df;
+            --red: #f05b50;
+            --gold: #d8b45f;
+            --muted: #c8d3cc;
+            --line: rgba(255, 255, 255, .16);
+            --soft: rgba(255, 255, 255, .08);
+            --shadow: 0 10px 28px rgba(0, 0, 0, .22);
+            background:
+                radial-gradient(circle at 18% 18%, rgba(255, 255, 255, .05), transparent 23%),
+                radial-gradient(circle at 78% 32%, rgba(255, 255, 255, .04), transparent 20%),
+                linear-gradient(135deg, #0f4c3a, #082b22);
+            color: var(--navy)
         }
 
-        .game-history-row {
-            width: 100%;
-            padding: 15px 2px;
-            border: 0;
-            border-top: 1px solid var(--line);
+        body[data-theme="poker"] .card,
+        body[data-theme="poker"] .player-grid,
+        body[data-theme="poker"] .score-cell,
+        body[data-theme="poker"] .total-section,
+        body[data-theme="poker"] .total-row,
+        body[data-theme="poker"] .total-cell,
+        body[data-theme="poker"] .tabs,
+        body[data-theme="poker"] .game-menu,
+        body[data-theme="poker"] .modal-card {
+            background: var(--card);
+            color: var(--navy)
+        }
+
+        body[data-theme="poker"] .score-cell::placeholder {
+            color: rgba(255, 255, 255, .35)
+        }
+
+        body[data-theme="poker"] .bottom-nav {
+            background: rgba(8, 43, 34, .96)
+        }
+
+        body[data-theme="poker"] .nav-btn {
+            color: #d3ded8
+        }
+
+        body[data-theme="poker"] .nav-btn.active {
+            color: #fff
+        }
+
+        body[data-theme="poker"] .tab.active {
+            background: #f3ead0;
+            color: #0b3328
+        }
+
+        body[data-theme="poker"] .player-header.winner,
+        body[data-theme="poker"] .score-cell.winner,
+        body[data-theme="poker"] .total-cell.winner {
+            background: rgba(240, 91, 80, .14)
+        }
+
+        body[data-theme="poker"] .leader-ace {
+            background: #f8f4e6;
+            color: #0b3328;
+            border-color: #f8f4e6
+        }
+
+        body[data-theme="tropical"] {
+            --bg: #fff7ed;
+            --card: rgba(255, 255, 255, .92);
+            --navy: #0a5060;
+            --red: #ef5a67;
+            --gold: #f0b84b;
+            --muted: #5e7f85;
+            --line: rgba(10, 80, 96, .16);
+            --soft: #eefaf8;
+            --shadow: 0 10px 30px rgba(13, 100, 110, .10);
+            background:
+                radial-gradient(circle at 15% 10%, rgba(255, 196, 103, .28), transparent 24%),
+                radial-gradient(circle at 86% 18%, rgba(80, 199, 191, .22), transparent 24%),
+                linear-gradient(180deg, #fff8ef, #f3fffb);
+            color: var(--navy)
+        }
+
+        body[data-theme="tropical"] .brand-name .red,
+        body[data-theme="tropical"] .metric strong.red,
+        body[data-theme="tropical"] .game-menu .danger,
+        body[data-theme="tropical"] .end-game-bottom {
+            color: #ef5a67
+        }
+
+        body[data-theme="tropical"] .bottom-nav {
+            background: rgba(255, 255, 255, .94)
+        }
+
+        body[data-theme="tropical"] .nav-btn.active {
+            color: #0aa3a8
+        }
+
+        body[data-theme="tropical"] .tab.active {
+            background: #0a7d83;
+            color: #fff
+        }
+
+        .theme-options {
             display: grid;
-            grid-template-columns: 1fr auto;
-            gap: 10px;
-            background: transparent;
-            text-align: left
+            gap: 8px
         }
 
-        .game-history-row:first-of-type {
-            border-top: 0
-        }
-
-        .game-history-row strong {
-            color: var(--red)
-        }
-
-        .game-history-row:hover {
-            background: var(--soft)
-        }
-
-        .game-detail {
-            margin-top: 14px;
-            padding: 18px
-        }
-
-        .game-detail-head {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            gap: 10px;
-            margin-bottom: 14px
-        }
-
-        .back-btn {
+        .theme-choice {
+            width: 100%;
+            padding: 13px 14px;
             border: 1px solid var(--line);
-            background: #fff;
-            border-radius: 9px;
-            padding: 8px 10px;
+            border-radius: 10px;
+            background: var(--card);
+            text-align: left;
             font-weight: 700
         }
 
-        .detail-meta {
-            font-size: 12px;
-            color: var(--muted);
-            line-height: 1.7
+        .theme-choice.active {
+            box-shadow: inset 0 0 0 2px var(--gold)
         }
 
-        .detail-scorecard {
-            overflow: auto;
+        .stats-game-row+.stats-game-detail-row td {
+            padding: 0 !important;
+            border-bottom: 1px solid var(--line)
+        }
+
+        .inline-game-detail {
+            padding: 14px 10px 16px;
+            background: var(--soft)
+        }
+
+        .inline-game-meta {
+            display: flex;
+            justify-content: space-between;
+            gap: 8px;
+            margin-bottom: 10px;
+            font-size: 11px;
+            color: var(--muted)
+        }
+
+        .inline-score-wrap {
+            overflow-x: auto;
             border: 1px solid var(--line);
-            border-radius: 12px;
-            margin-top: 14px
+            border-radius: 10px;
+            background: var(--card)
         }
 
-        .detail-table {
+        .inline-score-table {
             width: 100%;
-            border-collapse: collapse;
             min-width: 420px;
+            border-collapse: collapse;
             font-size: 12px
         }
 
-        .detail-table th,
-        .detail-table td {
-            padding: 10px;
+        .inline-score-table th,
+        .inline-score-table td {
+            padding: 8px;
             border-right: 1px solid var(--line);
             border-bottom: 1px solid var(--line);
             text-align: center
         }
 
-        .detail-table th:last-child,
-        .detail-table td:last-child {
+        .inline-score-table th:last-child,
+        .inline-score-table td:last-child {
             border-right: 0
         }
 
-        .detail-table tr:last-child td {
+        .inline-score-table tr:last-child td {
             border-bottom: 0
         }
 
-        .detail-table th {
-            background: #fafafa;
-            font-size: 10px
+        .inline-score-table th {
+            background: var(--soft)
         }
 
-        .detail-table .winner-col {
-            background: #fff5f3;
+        .inline-score-table .winner-col {
             color: var(--red);
             font-weight: 800
-        }
-
-        .detail-total td {
-            font-weight: 800;
-            border-top: 2px solid var(--navy)
         }
 
         /* PLAYER LIST / PICKER */
@@ -777,7 +856,8 @@
             transform: translateX(-50%);
             width: min(100%, 760px);
             display: grid;
-            grid-template-columns: repeat(3, 1fr);
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 0;
             padding-bottom: env(safe-area-inset-bottom);
             background: rgba(255, 255, 255, .96);
             border-top: 1px solid var(--line);
@@ -786,11 +866,22 @@
         }
 
         .nav-btn {
+            width: 100%;
+            min-width: 0;
             border: 0;
+            border-right: 1px solid var(--line);
             background: transparent;
-            padding: 12px 5px 10px;
-            font-size: 11px;
+            padding: 17px 5px 15px;
+            font-family: Inter, system-ui, sans-serif;
+            font-size: 14px;
+            font-weight: 800;
+            font-style: normal;
+            text-transform: uppercase;
             color: #5e6875
+        }
+
+        .nav-btn:last-child {
+            border-right: 0
         }
 
         .nav-icon {
@@ -811,7 +902,7 @@
             }
 
             .brand-name {
-                font-size: 38px
+                font-size: 46px
             }
 
             .player-grid,
@@ -820,10 +911,17 @@
                 grid-template-columns: 30px repeat(var(--player-count), minmax(0, 1fr))
             }
 
+            .scorecard-inner.wide {
+                min-width: calc(30px + (var(--player-count) * 88px))
+            }
+
             .player-header {
-                font-size: 9px;
                 padding-left: 2px;
                 padding-right: 2px
+            }
+
+            .player-name-text {
+                font-size: 14px
             }
 
             .score-cell {
@@ -869,6 +967,8 @@
                 <button data-action="players">Player List</button>
                 <button data-action="remove-player">Remove Player from Game</button>
                 <div class="menu-divider"></div>
+                <button data-action="theme">Change Theme</button>
+                <div class="menu-divider"></div>
                 <button data-action="settings">Winning Score</button>
                 <button data-action="delete" class="danger">Delete Current Game</button>
             </div>
@@ -877,42 +977,30 @@
         <section id="scorePage" class="page active">
             <div class="page-heading">
                 <span id="gameStatus" class="eyebrow">scorecard</span>
-                <div class="score-actions">
-                    <button id="addPlayerButton" class="add-column-btn" type="button" aria-label="Add player">+</button>
-                    <button id="finishButton" class="outline-danger" type="button">end and save</button>
-                </div>
             </div>
             <section class="card scorecard-wrapper">
-                <div id="scorecard"></div>
+                <div class="score-horizontal-scroll">
+                    <div id="scorecard"></div>
+                </div>
             </section>
-            <div class="card score-footer">
-                <div class="stat-mini"><label>CURRENT LEADER</label><strong id="currentLeader">—</strong></div>
-                <div class="stat-mini"><label>HIGH HAND (ALL TIME)</label><strong id="highHand">—</strong></div>
+            <div class="score-bottom-actions">
+                <button id="addPlayerButton" class="add-player-bottom" type="button">ADD PLAYER</button>
+                <button id="finishButton" class="end-game-bottom" type="button">END GAME</button>
             </div>
             <div id="message" class="message" aria-live="polite"></div>
         </section>
-
-        <section id="gamesPage" class="page">
-            <div class="stats-title">▱ <span>game history</span></div>
-            <div id="gamesListView">
-                <div class="card games-list" id="gamesList"></div>
-            </div>
-            <div id="gameDetailView" class="hidden"></div>
-        </section>
-
         <section id="statsPage" class="page">
-            <div class="stats-title">▥ <span>statistics</span></div>
-            <div class="card tabs"><button class="tab active" data-stats-tab="overview">overview</button><button
-                    class="tab" data-stats-tab="player">by player</button><button class="tab" data-stats-tab="game">by
-                    game</button></div>
+            <div class="page-heading"><span class="eyebrow">statistics</span></div>
+            <div class="card tabs"><button class="tab active" data-stats-tab="overview">OVERVIEW</button><button
+                    class="tab" data-stats-tab="player">BY PLAYER</button><button class="tab" data-stats-tab="game">BY
+                    GAME</button></div>
             <div id="statsOverview"></div>
         </section>
     </main>
 
     <nav class="bottom-nav" aria-label="Main navigation">
-        <button class="nav-btn active" data-page="score"><span class="nav-icon">☷</span>scorecard</button>
-        <button class="nav-btn" data-page="games"><span class="nav-icon">▱</span>games</button>
-        <button class="nav-btn" data-page="stats"><span class="nav-icon">▥</span>stats</button>
+        <button class="nav-btn active" data-page="score">SCORECARD</button>
+        <button class="nav-btn" data-page="stats">STATS</button>
     </nav>
 
     <div id="modalBackdrop" class="modal-backdrop hidden" aria-hidden="true">
@@ -920,7 +1008,7 @@
     </div>
 
     <script>
-        const APP_CONFIG = { minPlayers: 2, maxPlayers: 6, defaultWinningScore: 500, initialVisibleHands: 5 };
+        const APP_CONFIG = { minPlayers: 2, maxPlayers: 8, defaultWinningScore: 500, initialVisibleHands: 5 };
         const DEFAULT_SAVED_PLAYERS = [];
         function createId() { return typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).slice(2) }
         function createEmptyHand() { return { id: createId(), scores: {} } }
@@ -941,6 +1029,28 @@
             load() { try { const saved = JSON.parse(localStorage.getItem("ginRummySavedPlayers") || "null"); return Array.isArray(saved) ? saved : DEFAULT_SAVED_PLAYERS.slice() } catch { return DEFAULT_SAVED_PLAYERS.slice() } },
             save(players) { localStorage.setItem("ginRummySavedPlayers", JSON.stringify(players)) }
         };
+        const themeRepository = {
+            load() { return localStorage.getItem("ginRummyTheme") || "classic" },
+            save(theme) { localStorage.setItem("ginRummyTheme", theme) }
+        };
+
+        function applyTheme(theme) {
+            document.body.dataset.theme = theme;
+            themeRepository.save(theme)
+        }
+
+        function openThemePicker() {
+            const current = themeRepository.load();
+            openModal(`<div class="modal-head"><h3>change theme</h3><button class="close-btn" data-close-modal>×</button></div><div class="theme-options"><button class="theme-choice ${current === "classic" ? "active" : ""}" data-theme-choice="classic">Classic</button><button class="theme-choice ${current === "poker" ? "active" : ""}" data-theme-choice="poker">Poker Night</button><button class="theme-choice ${current === "tropical" ? "active" : ""}" data-theme-choice="tropical">Tropical</button></div>`);
+            modalCard.querySelector("[data-close-modal]").onclick = closeModal;
+            modalCard.querySelectorAll("[data-theme-choice]").forEach(button => button.onclick = () => {
+                applyTheme(button.dataset.themeChoice);
+                closeModal();
+                renderGame();
+                renderStats()
+            })
+        }
+
         let game = null, newRowTimer = null, currentPage = "score";
         const $ = id => document.getElementById(id);
         const scorecardElement = $("scorecard"), menuButton = $("menuButton"), gameMenu = $("gameMenu"), gameStatusElement = $("gameStatus"), messageElement = $("message"), modalBackdrop = $("modalBackdrop"), modalCard = $("modalCard");
@@ -957,17 +1067,42 @@
             ensureMinimumHands();
             scorecardElement.innerHTML = "";
             scorecardElement.style.setProperty("--player-count", game.players.length);
+            scorecardElement.className = "scorecard-inner" + (game.players.length > 5 ? " wide" : "");
             renderPlayerHeaders();
-            const scroll = document.createElement("div"); scroll.className = "score-scroll-area";
-            renderHands(scroll); scorecardElement.appendChild(scroll);
-            renderTotals(); renderGameStatus(); renderScoreFooter();
+            const rows = document.createElement("div"); rows.className = "score-scroll-area";
+            renderHands(rows); scorecardElement.appendChild(rows);
+            renderTotals(); renderGameStatus();
+            requestAnimationFrame(fitPlayerNames);
         }
+
+        function getDisplayedLeader() {
+            if (!completedHands().length) return null;
+            const totals = getTotals(), high = Math.max(...game.players.map(p => totals[p.id]));
+            const leaders = game.players.filter(p => totals[p.id] === high);
+            return leaders.length === 1 ? leaders[0] : null;
+        }
+
         function renderPlayerHeaders() {
-            const winner = determineWinner(), header = document.createElement("div"); header.className = "player-grid";
+            const winner = determineWinner(), leader = getDisplayedLeader(), header = document.createElement("div"); header.className = "player-grid";
             const r = document.createElement("div"); r.className = "round-head"; r.textContent = "#"; header.appendChild(r);
-            for (const p of game.players) { const el = document.createElement("div"); el.className = "player-header" + (p.id === winner?.id ? " winner" : ""); el.textContent = p.name.toUpperCase(); el.title = "Tap to choose a saved player or edit this name"; el.onclick = () => openPlayerPicker(p.id); header.appendChild(el) }
+            for (const p of game.players) {
+                const el = document.createElement("div"); el.className = "player-header" + (p.id === winner?.id ? " winner" : ""); el.title = "Tap to choose a saved player or edit this name";
+                const wrap = document.createElement("div"); wrap.className = "player-name-wrap";
+                const name = document.createElement("span"); name.className = "player-name-text"; name.textContent = p.name.toUpperCase(); wrap.appendChild(name);
+                if (p.id === leader?.id) { const ace = document.createElement("span"); ace.className = "leader-ace"; ace.textContent = "A♠"; wrap.appendChild(ace) }
+                el.appendChild(wrap); el.onclick = () => openPlayerPicker(p.id); header.appendChild(el)
+            }
             scorecardElement.appendChild(header)
         }
+
+        function fitPlayerNames() {
+            document.querySelectorAll(".player-name-text").forEach(el => {
+                el.style.fontSize = "14px";
+                let size = 14;
+                while (el.scrollWidth > el.clientWidth && size > 8) { size -= .5; el.style.fontSize = `${size}px` }
+            })
+        }
+
         function renderHands(container) {
             const winner = determineWinner();
             game.hands.forEach((hand, handIndex) => {
@@ -976,20 +1111,28 @@
                 container.appendChild(row)
             })
         }
+
         function renderTotals() {
-            const winner = determineWinner(), totals = getTotals(), section = document.createElement("div"); section.className = "total-section"; section.innerHTML = '<div class="total-label">total</div>';
+            const winner = determineWinner(), totals = getTotals(), section = document.createElement("div"); section.className = "total-section"; section.innerHTML = '<div class="total-label">total · tap a score to see points to 500</div>';
             const row = document.createElement("div"); row.className = "total-row"; const spacer = document.createElement("div"); spacer.className = "total-spacer"; spacer.textContent = "Σ"; row.appendChild(spacer);
-            for (const p of game.players) { const el = document.createElement("div"); el.className = "total-cell" + (p.id === winner?.id ? " winner" : ""); if (p.id === winner?.id) { el.innerHTML = `<span class="winner-total-wrap"><span>${totals[p.id]}</span><span class="ace-card">A♠</span></span>` } else { el.textContent = totals[p.id] } row.appendChild(el) }
+            for (const p of game.players) {
+                const el = document.createElement("button"); el.type = "button"; el.className = "total-cell" + (p.id === winner?.id ? " winner" : ""); el.dataset.playerId = p.id; el.textContent = totals[p.id]; el.onclick = () => showPointsRemaining(el, p.id); row.appendChild(el)
+            }
             section.appendChild(row); scorecardElement.appendChild(section)
         }
+
+        function showPointsRemaining(el, playerId) {
+            const remaining = Math.max(0, game.winningScore - getPlayerTotal(playerId));
+            clearTimeout(el._remainingTimer); el.textContent = `${remaining} to go`;
+            el._remainingTimer = setTimeout(() => { if (document.body.contains(el)) el.textContent = getPlayerTotal(playerId) }, 2000)
+        }
+
         function renderGameStatus() { gameStatusElement.textContent = "scorecard" }
-        async function getAllTimeHighHand() { const finished = await gameRepository.loadFinishedGames(); let best = { score: null, name: "" }; for (const g of finished) { for (const h of g.hands) { for (const p of g.players) { const v = h.scores[p.id]; if (v !== undefined && v !== "" && (best.score === null || Number(v) > best.score)) best = { score: Number(v), name: p.name } } } } for (const h of completedHands()) { for (const p of game.players) { const v = h.scores[p.id]; if (v !== undefined && v !== "" && (best.score === null || Number(v) > best.score)) best = { score: Number(v), name: p.name } } } return best }
-        async function renderScoreFooter() { const leader = determineLeader(); $("currentLeader").textContent = leader && completedHands().length ? leader.name : "—"; const best = await getAllTimeHighHand(); $("highHand").textContent = best.score === null ? "—" : `${best.score} by ${best.name}` }
 
         function handleScoreInput(e) {
             const input = e.target, handIndex = Number(input.dataset.handIndex), playerId = input.dataset.playerId, value = input.value;
             if (value === "") delete game.hands[handIndex].scores[playerId]; else game.hands[handIndex].scores[playerId] = Number(value);
-            updateTotalsOnly(); renderScoreFooter();
+            updateTotalsOnly(); updateLeaderAce();
             if (!isHandComplete(game.hands[handIndex])) return;
             clearTimeout(newRowTimer);
             newRowTimer = setTimeout(() => { if (!isHandComplete(game.hands[handIndex])) return; if (determineWinner()) { renderGame(); return } if (handIndex === game.hands.length - 1) { game.hands.push(createEmptyHand()); renderGame(); focusScoreCell(game.hands.length - 1, 0) } }, 2000)
@@ -998,7 +1141,19 @@
         function moveToNextScoreCell(handIndex, playerIndex) { if (playerIndex < game.players.length - 1) { focusScoreCell(handIndex, playerIndex + 1); return } const hand = game.hands[handIndex]; if (isHandComplete(hand)) { if (handIndex === game.hands.length - 1 && !determineWinner()) { clearTimeout(newRowTimer); newRowTimer = setTimeout(() => { if (handIndex === game.hands.length - 1 && !determineWinner()) { game.hands.push(createEmptyHand()); renderGame(); focusScoreCell(game.hands.length - 1, 0) } }, 2000); return } focusScoreCell(Math.min(handIndex + 1, game.hands.length - 1), 0); return } focusFirstEmptyCell(handIndex) }
         function focusScoreCell(h, p) { requestAnimationFrame(() => { const el = document.querySelector(`.score-cell[data-hand-index="${h}"][data-player-index="${p}"]`); if (el) { el.focus(); el.select() } }) }
         function focusFirstEmptyCell(h) { const hand = game.hands[h]; for (let i = 0; i < game.players.length; i++) { const v = hand.scores[game.players[i].id]; if (v === undefined || v === "") { focusScoreCell(h, i); return } } }
-        function updateTotalsOnly() { const totals = getTotals(), winner = determineWinner(), cells = document.querySelectorAll(".total-cell"); game.players.forEach((p, i) => { if (!cells[i]) return; cells[i].classList.toggle("winner", p.id === winner?.id); cells[i].innerHTML = p.id === winner?.id ? `<span class="winner-total-wrap"><span>${totals[p.id]}</span><span class="ace-card">A♠</span></span>` : String(totals[p.id]) }) }
+        function updateTotalsOnly() {
+            const totals = getTotals(), winner = determineWinner(), cells = document.querySelectorAll(".total-cell");
+            game.players.forEach((p, i) => { if (!cells[i]) return; cells[i].classList.toggle("winner", p.id === winner?.id); cells[i].textContent = String(totals[p.id]) })
+        }
+
+        function updateLeaderAce() {
+            const leader = getDisplayedLeader();
+            document.querySelectorAll(".player-header").forEach((header, i) => {
+                header.querySelector(".leader-ace")?.remove();
+                if (game.players[i]?.id === leader?.id) { const ace = document.createElement("span"); ace.className = "leader-ace"; ace.textContent = "A♠"; header.querySelector(".player-name-wrap")?.appendChild(ace) }
+            });
+            requestAnimationFrame(fitPlayerNames)
+        }
 
         function addPlayer() { if (game.players.length >= APP_CONFIG.maxPlayers) return showMessage(`Maximum of ${APP_CONFIG.maxPlayers} players.`); game.players.push({ id: createId(), name: `Player ${game.players.length + 1}` }); for (const h of game.hands) delete h.scores[game.players[game.players.length - 1].id]; renderGame(); openPlayerPicker(game.players[game.players.length - 1].id); showMessage("Player column added.") }
         function removePlayer() { if (game.players.length <= APP_CONFIG.minPlayers) return showMessage("A game needs at least 2 players."); const names = game.players.map((p, i) => `${i + 1}. ${p.name}`).join("\n"), response = prompt(`Enter player number to remove:\n\n${names}`); if (!response) return; const i = Number(response) - 1; if (i < 0 || i >= game.players.length) return showMessage("That player number is not valid."); const removed = game.players[i]; if (!confirm(`Remove ${removed.name} from this game?`)) return; game.players.splice(i, 1); for (const h of game.hands) delete h.scores[removed.id]; renderGame(); showMessage(`${removed.name} removed.`) }
@@ -1024,45 +1179,68 @@
 
         async function saveProgress() { game.status = "active"; game = await gameRepository.save(game); renderGameStatus(); showMessage("Game saved.") }
         async function pauseGame() { game.status = "paused"; game = await gameRepository.save(game); renderGameStatus(); showMessage("Game paused and saved.") }
-        async function finishGame() {
+        function finishGame() {
             if (completedHands().length === 0) return showMessage("Enter at least one complete hand first.");
-            const winner = determineWinner(); if (!winner) return showMessage(`No player has reached ${game.winningScore} points yet.`);
-            if (!confirm(`${winner.name} wins with ${getPlayerTotal(winner.id)} points. End and save this game?`)) return;
-            game.hands = completedHands(); game.status = "finished"; game.finishedAt = new Date().toISOString(); game.updatedAt = game.finishedAt; game.winnerId = winner.id;
-            await gameRepository.archive(game); await gameRepository.deleteCurrentGame(); showMessage(`${winner.name} wins! Game saved.`);
-            game = createNewGame(); ensureMinimumHands(); await gameRepository.save(game); renderGame(); await renderGames(); await renderStats(); showPage("score")
+            const leader = determineLeader();
+            openModal(`<div class="modal-head"><h3>end game?</h3><button class="close-btn" data-close-modal>×</button></div><div class="muted" style="line-height:1.5;margin-bottom:14px">Choose whether to save this game to game history or delete it.</div><button class="manual-name" id="saveEndedGame">save game</button><button class="manual-name" id="deleteEndedGame" style="color:var(--red);border-color:var(--red)">delete game</button>`);
+            modalCard.querySelector("[data-close-modal]").onclick = closeModal;
+            $("saveEndedGame").onclick = () => saveEndedGame(leader?.id || null);
+            $("deleteEndedGame").onclick = deleteEndedGame
         }
+
+        async function saveEndedGame(winnerId) {
+            closeModal(); game.hands = completedHands(); game.status = "finished"; game.finishedAt = new Date().toISOString(); game.updatedAt = game.finishedAt; game.winnerId = winnerId;
+            await gameRepository.archive(game); await gameRepository.deleteCurrentGame();
+            game = createNewGame(); ensureMinimumHands(); await gameRepository.save(game); renderGame(); await renderStats(); showPage("score"); showMessage("Game saved.")
+        }
+
+        async function deleteEndedGame() {
+            closeModal(); await gameRepository.deleteCurrentGame(); game = createNewGame(); ensureMinimumHands(); await gameRepository.save(game); renderGame(); showPage("score"); showMessage("Game deleted.")
+        }
+
         async function deleteGame() { if (!confirm("Delete this game? This cannot be undone.")) return; await gameRepository.deleteCurrentGame(); game = createNewGame(); await gameRepository.save(game); renderGame(); showPage("score") }
         function openSettings() { const value = prompt("Winning score:", game.winningScore); if (!value) return; const score = Number(value); if (!Number.isFinite(score) || score <= 0) return showMessage("Enter a valid winning score."); game.winningScore = score; showMessage(`Winning score set to ${score}.`) }
         function toggleMenu() { gameMenu.classList.toggle("hidden") } function closeMenu() { gameMenu.classList.add("hidden") }
-        async function handleMenuAction(e) { const b = e.target.closest("[data-action]"); if (!b) return; closeMenu(); const a = b.dataset.action; if (a === "save") await saveProgress(); else if (a === "pause") await pauseGame(); else if (a === "players") openPlayerListManager(); else if (a === "remove-player") removePlayer(); else if (a === "settings") openSettings(); else if (a === "delete") await deleteGame() }
+        async function handleMenuAction(e) { const b = e.target.closest("[data-action]"); if (!b) return; closeMenu(); const a = b.dataset.action; if (a === "save") await saveProgress(); else if (a === "pause") await pauseGame(); else if (a === "players") openPlayerListManager(); else if (a === "remove-player") removePlayer(); else if (a === "theme") openThemePicker(); else if (a === "settings") openSettings(); else if (a === "delete") await deleteGame() }
         function showMessage(m) { messageElement.textContent = m; clearTimeout(showMessage.timeout); showMessage.timeout = setTimeout(() => messageElement.textContent = "", 2500) }
 
-        function showPage(page) { currentPage = page; document.querySelectorAll(".page").forEach(x => x.classList.remove("active")); $(`${page}Page`).classList.add("active"); document.querySelectorAll(".nav-btn").forEach(x => x.classList.toggle("active", x.dataset.page === page)); if (page === "score") renderGame(); if (page === "games") { showGamesList(); renderGames() } if (page === "stats") renderStats(); window.scrollTo(0, 0) }
-        async function buildStats() { const games = await gameRepository.loadFinishedGames(), map = new Map(); let high = { score: null, name: "" }; for (const g of games) { const totals = {}; for (const p of g.players) { totals[p.id] = g.hands.reduce((t, h) => t + Number(h.scores[p.id] || 0), 0); if (!map.has(p.name)) map.set(p.name, { name: p.name, games: 0, wins: 0, points: 0 }); const s = map.get(p.name); s.games++; s.points += totals[p.id]; if (p.id === g.winnerId) s.wins++; for (const h of g.hands) { const v = h.scores[p.id]; if (v !== undefined && (high.score === null || Number(v) > high.score)) high = { score: Number(v), name: p.name } } } } return { games, players: [...map.values()].sort((a, b) => b.wins - a.wins), high } }
+        function showPage(page) { currentPage = page; document.querySelectorAll(".page").forEach(x => x.classList.remove("active")); $(`${page}Page`).classList.add("active"); document.querySelectorAll(".nav-btn").forEach(x => x.classList.toggle("active", x.dataset.page === page)); if (page === "score") renderGame(); if (page === "stats") renderStats(); window.scrollTo(0, 0) }
+        async function buildStats() { const games = await gameRepository.loadFinishedGames(), map = new Map(); let high = { score: null, name: "" }, low = { score: null, name: "" }; for (const g of games) { const totals = {}; for (const p of g.players) { totals[p.id] = g.hands.reduce((t, h) => t + Number(h.scores[p.id] || 0), 0); if (!map.has(p.name)) map.set(p.name, { name: p.name, games: 0, wins: 0, points: 0 }); const s = map.get(p.name); s.games++; s.points += totals[p.id]; if (p.id === g.winnerId) s.wins++; for (const h of g.hands) { const v = h.scores[p.id]; if (v !== undefined) { if (high.score === null || Number(v) > high.score) high = { score: Number(v), name: p.name }; if (low.score === null || Number(v) < low.score) low = { score: Number(v), name: p.name } } } } } return { games, players: [...map.values()].sort((a, b) => b.wins - a.wins), high, low } }
         let currentStatsTab = "overview";
         async function renderStats() {
             const s = await buildStats();
             document.querySelectorAll("[data-stats-tab]").forEach(b => b.classList.toggle("active", b.dataset.statsTab === currentStatsTab));
             if (currentStatsTab === "player") return renderStatsByPlayer(s);
             if (currentStatsTab === "game") return renderStatsByGame(s);
-            const top = s.players[0], low = s.players.length ? [...s.players].sort((a, b) => (a.points / a.games) - (b.points / b.games))[0] : null;
-            $("statsOverview").innerHTML = `<div class="stats-grid"><div class="card metric"><label>TOTAL GAMES</label><strong>${s.games.length}</strong><small>played</small></div><div class="card metric"><label>TOP PLAYER</label><strong class="red">${top?.name || "—"}</strong><small>${top ? `${top.wins} wins` : "no games yet"}</small></div><div class="card metric"><label>LOWEST AVG</label><strong>${low ? Math.round(low.points / low.games) : "—"}</strong><small>${low ? `by ${low.name}` : "—"}</small></div><div class="card metric"><label>HIGHEST HAND</label><strong class="red">${s.high.score ?? "—"}</strong><small>${s.high.name ? `by ${s.high.name}` : "—"}</small></div></div><div class="card player-summary"><div class="section-title" style="margin-bottom:8px">player summary</div><table class="summary-table"><thead><tr><th>player</th><th>games</th><th>wins</th><th>win %</th><th>total pts</th><th>avg/game</th></tr></thead><tbody>${s.players.length ? s.players.map(p => `<tr><td>${escapeHtml(p.name)}</td><td>${p.games}</td><td>${p.wins}</td><td>${Math.round(p.wins / p.games * 100)}%</td><td>${p.points}</td><td>${(p.points / p.games).toFixed(1)}</td></tr>`).join("") : '<tr><td colspan="6">No finished games yet.</td></tr>'}</tbody></table></div><div class="card record"><span>♜ &nbsp; all time high hand</span><span><strong>${s.high.score ?? "—"}</strong>${s.high.name ? ` &nbsp;by ${escapeHtml(s.high.name)}` : ""}</span></div>`
+            const top = s.players[0];
+            $("statsOverview").innerHTML = `<div class="stats-grid"><div class="card metric"><label>TOTAL GAMES</label><strong>${s.games.length}</strong><small>played</small></div><div class="card metric"><label>TOP PLAYER</label><strong class="red">${top?.name || "—"}</strong><small>${top ? `${top.wins} wins` : "no games yet"}</small></div><div class="card metric"><label>LOWEST HAND</label><strong>${s.low.score ?? "—"}</strong><small>${s.low.name ? `by ${escapeHtml(s.low.name)}` : "—"}</small></div><div class="card metric"><label>HIGHEST HAND</label><strong class="red">${s.high.score ?? "—"}</strong><small>${s.high.name ? `by ${escapeHtml(s.high.name)}` : "—"}</small></div></div><div class="card player-summary"><div class="section-title" style="margin-bottom:8px">player summary</div><table class="summary-table"><thead><tr><th>player</th><th>games</th><th>wins</th><th>win %</th><th>avg/game</th><th>total pts</th></tr></thead><tbody>${s.players.length ? s.players.map(p => `<tr><td>${escapeHtml(p.name)}</td><td>${p.games}</td><td>${p.wins}</td><td>${Math.round(p.wins / p.games * 100)}%</td><td>${(p.points / p.games).toFixed(1)}</td><td>${p.points}</td></tr>`).join("") : '<tr><td colspan="6">No finished games yet.</td></tr>'}</tbody></table></div>`
         }
         function renderStatsByPlayer(s) {
-            $("statsOverview").innerHTML = `<div class="card player-summary"><div class="section-title" style="margin-bottom:8px">by player</div><table class="summary-table"><thead><tr><th>player</th><th>games</th><th>wins</th><th>win %</th><th>total pts</th><th>avg/game</th></tr></thead><tbody>${s.players.length ? s.players.map(p => `<tr><td>${escapeHtml(p.name)}</td><td>${p.games}</td><td>${p.wins}</td><td>${Math.round(p.wins / p.games * 100)}%</td><td>${p.points}</td><td>${(p.points / p.games).toFixed(1)}</td></tr>`).join("") : '<tr><td colspan="6">No finished games yet.</td></tr>'}</tbody></table></div>`
+            $("statsOverview").innerHTML = `<div class="card player-summary"><div class="section-title" style="margin-bottom:8px">by player</div><table class="summary-table"><thead><tr><th>player</th><th>games</th><th>wins</th><th>win %</th><th>avg/game</th><th>total pts</th></tr></thead><tbody>${s.players.length ? s.players.map(p => `<tr><td>${escapeHtml(p.name)}</td><td>${p.games}</td><td>${p.wins}</td><td>${Math.round(p.wins / p.games * 100)}%</td><td>${(p.points / p.games).toFixed(1)}</td><td>${p.points}</td></tr>`).join("") : '<tr><td colspan="6">No finished games yet.</td></tr>'}</tbody></table></div>`
         }
         function renderStatsByGame(s) {
             const games = s.games.slice().sort((a, b) => new Date(b.finishedAt || b.updatedAt) - new Date(a.finishedAt || a.updatedAt));
-            $("statsOverview").innerHTML = `<div class="card player-summary"><div class="section-title" style="margin-bottom:8px">by game</div><table class="summary-table"><thead><tr><th>date</th><th>winner</th><th>score</th><th>hands</th></tr></thead><tbody>${games.length ? games.map(g => { const w = g.players.find(p => p.id === g.winnerId); const score = w ? g.hands.reduce((t, h) => t + Number(h.scores[w.id] || 0), 0) : 0; return `<tr><td>${formatDate(g.finishedAt || g.updatedAt)}</td><td>${escapeHtml(w?.name || "—")}</td><td>${score}</td><td>${g.hands.length}</td></tr>` }).join("") : '<tr><td colspan="4">No finished games yet.</td></tr>'}</tbody></table></div>`
+            $("statsOverview").innerHTML = `<div class="card player-summary"><div class="section-title" style="margin-bottom:8px">by game</div><table class="summary-table"><thead><tr><th>date</th><th>winner</th><th>score</th><th>hands</th></tr></thead><tbody>${games.length ? games.map(g => { const w = g.players.find(p => p.id === g.winnerId); const score = w ? g.hands.reduce((t, h) => t + Number(h.scores[w.id] || 0), 0) : 0; return `<tr class="stats-game-row" data-stats-game-id="${g.id}" style="cursor:pointer"><td>${formatDate(g.finishedAt || g.updatedAt)}</td><td>${escapeHtml(w?.name || "—")}</td><td>${score}</td><td>${g.hands.length}</td></tr>` }).join("") : '<tr><td colspan="4">No finished games yet.</td></tr>'}</tbody></table></div>`;
+            $("statsOverview").querySelectorAll("[data-stats-game-id]").forEach(row => row.onclick = () => toggleStatsGameDetail(row, row.dataset.statsGameId, games))
         }
-        async function renderGames() { const games = (await gameRepository.loadFinishedGames()).slice().sort((a, b) => new Date(b.finishedAt || b.updatedAt) - new Date(a.finishedAt || a.updatedAt)); $("gamesList").innerHTML = games.length ? games.map(g => { const w = g.players.find(p => p.id === g.winnerId); return `<button class="game-history-row" data-game-id="${g.id}"><div><strong>${escapeHtml(w?.name || "—")} won</strong><div class="muted" style="font-size:12px;margin-top:4px">${g.players.map(p => escapeHtml(p.name)).join(" · ")}</div></div><span class="muted" style="font-size:12px">${formatDate(g.finishedAt || g.updatedAt)}</span></button>` }).join("") : '<div class="empty-state">No finished games yet.</div>'; $("gamesList").querySelectorAll("[data-game-id]").forEach(b => b.onclick = () => openGameDetail(b.dataset.gameId)) }
-        function showGamesList() { $("gamesListView").classList.remove("hidden"); $("gameDetailView").classList.add("hidden"); $("gameDetailView").innerHTML = "" }
-        async function openGameDetail(gameId) { const games = await gameRepository.loadFinishedGames(), g = games.find(x => x.id === gameId); if (!g) return; const winner = g.players.find(p => p.id === g.winnerId), totals = Object.fromEntries(g.players.map(p => [p.id, g.hands.reduce((t, h) => t + Number(h.scores[p.id] || 0), 0)])); $("gamesListView").classList.add("hidden"); $("gameDetailView").classList.remove("hidden"); $("gameDetailView").innerHTML = `<div class="card game-detail"><div class="game-detail-head"><div><div class="section-title">${escapeHtml(winner?.name || "—")} won</div><div class="detail-meta">Ended: ${formatDateTime(g.finishedAt)}${g.lastSavedAt ? `<br>Last saved: ${formatDateTime(g.lastSavedAt)}` : ""}</div></div><button class="back-btn" id="backToGames">← games</button></div><div class="detail-scorecard"><table class="detail-table"><thead><tr><th>#</th>${g.players.map(p => `<th class="${p.id === g.winnerId ? "winner-col" : ""}">${escapeHtml(p.name)}</th>`).join("")}</tr></thead><tbody>${g.hands.map((h, i) => `<tr><td>${i + 1}</td>${g.players.map(p => `<td class="${p.id === g.winnerId ? "winner-col" : ""}">${h.scores[p.id] ?? "—"}</td>`).join("")}</tr>`).join("")}<tr class="detail-total"><td>Σ</td>${g.players.map(p => `<td class="${p.id === g.winnerId ? "winner-col" : ""}">${totals[p.id]}${p.id === g.winnerId ? ' <span class="ace-card">A♠</span>' : ""}</td>`).join("")}</tr></tbody></table></div></div>`; $("backToGames").onclick = showGamesList; window.scrollTo(0, 0) }
+
+        function toggleStatsGameDetail(row, gameId, games) {
+            const existing = row.nextElementSibling;
+            if (existing?.classList.contains("stats-game-detail-row")) { existing.remove(); return }
+            document.querySelectorAll(".stats-game-detail-row").forEach(el => el.remove());
+            const g = games.find(x => x.id === gameId); if (!g) return;
+            const winner = g.players.find(p => p.id === g.winnerId);
+            const totals = Object.fromEntries(g.players.map(p => [p.id, g.hands.reduce((t, h) => t + Number(h.scores[p.id] || 0), 0)]));
+            const detail = document.createElement("tr");
+            detail.className = "stats-game-detail-row";
+            detail.innerHTML = `<td colspan="4"><div class="inline-game-detail"><div class="inline-game-meta"><span>${formatDateTime(g.finishedAt || g.updatedAt)}</span><span>${escapeHtml(winner?.name || "—")} won</span></div><div class="inline-score-wrap"><table class="inline-score-table"><thead><tr><th>#</th>${g.players.map(p => `<th class="${p.id === g.winnerId ? "winner-col" : ""}">${escapeHtml(p.name)}</th>`).join("")}</tr></thead><tbody>${g.hands.map((h, i) => `<tr><td>${i + 1}</td>${g.players.map(p => `<td class="${p.id === g.winnerId ? "winner-col" : ""}">${h.scores[p.id] ?? "—"}</td>`).join("")}</tr>`).join("")}<tr><td>Σ</td>${g.players.map(p => `<td class="${p.id === g.winnerId ? "winner-col" : ""}"><strong>${totals[p.id]}</strong></td>`).join("")}</tr></tbody></table></div></div></td>`;
+            row.insertAdjacentElement("afterend", detail)
+        }
+
         function formatDate(v) { if (!v) return "—"; return new Date(v).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" }) }
         function formatDateTime(v) { if (!v) return "—"; return new Date(v).toLocaleString(undefined, { month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit" }) }
-        async function renderAll() { renderGame(); await renderStats(); await renderGames() }
-        async function initializeApp() { const saved = await gameRepository.loadCurrentGame(); game = saved && saved.status !== "finished" ? saved : createNewGame(); ensureMinimumHands(); await renderAll(); showPage("score") }
+        async function renderAll() { renderGame(); await renderStats() }
+        async function initializeApp() { applyTheme(themeRepository.load()); const saved = await gameRepository.loadCurrentGame(); game = saved && saved.status !== "finished" ? saved : createNewGame(); ensureMinimumHands(); await renderAll(); showPage("score") }
 
         menuButton.addEventListener("click", e => { e.stopPropagation(); toggleMenu() });
         gameMenu.addEventListener("click", handleMenuAction);
