@@ -205,8 +205,12 @@
         }
 
         .eyebrow {
-            font-size: 13px;
-            font-weight: 700
+            font-family: "Cormorant Garamond", serif;
+            font-size: 30px;
+            line-height: 34px;
+            font-weight: 700;
+            font-style: italic;
+            letter-spacing: -.4px
         }
 
         .score-actions {
@@ -216,12 +220,12 @@
         }
 
         .add-column-btn {
-            width: 42px;
-            height: 42px;
+            width: 34px;
+            height: 34px;
             border: 1px solid var(--line);
             background: #fff;
             border-radius: 10px;
-            font-size: 24px;
+            font-size: 21px;
             line-height: 1;
             font-weight: 500
         }
@@ -231,7 +235,7 @@
         }
 
         .outline-danger {
-            height: 42px;
+            height: 34px;
             border: 1px solid var(--red);
             background: #fff;
             color: var(--red);
@@ -245,9 +249,9 @@
         }
 
         .score-scroll-area {
-            overflow-y: auto;
-            max-height: calc(100vh - 365px);
-            min-height: 277px
+            overflow: visible;
+            max-height: none;
+            min-height: 0
         }
 
         .player-grid,
@@ -828,8 +832,9 @@
             }
 
             .score-scroll-area {
-                max-height: calc(100vh - 345px);
-                min-height: 272px
+                max-height: none;
+                min-height: 0;
+                overflow: visible
             }
 
             .stats-grid {
@@ -871,7 +876,7 @@
 
         <section id="scorePage" class="page active">
             <div class="page-heading">
-                <span id="gameStatus" class="eyebrow">current game</span>
+                <span id="gameStatus" class="eyebrow">scorecard</span>
                 <div class="score-actions">
                     <button id="addPlayerButton" class="add-column-btn" type="button" aria-label="Add player">+</button>
                     <button id="finishButton" class="outline-danger" type="button">end and save</button>
@@ -897,8 +902,9 @@
 
         <section id="statsPage" class="page">
             <div class="stats-title">▥ <span>statistics</span></div>
-            <div class="card tabs"><button class="tab active">overview</button><button class="tab">by
-                    player</button><button class="tab">by game</button></div>
+            <div class="card tabs"><button class="tab active" data-stats-tab="overview">overview</button><button
+                    class="tab" data-stats-tab="player">by player</button><button class="tab" data-stats-tab="game">by
+                    game</button></div>
             <div id="statsOverview"></div>
         </section>
     </main>
@@ -919,6 +925,10 @@
         function createId() { return typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).slice(2) }
         function createEmptyHand() { return { id: createId(), scores: {} } }
         function createNewGame() { const now = new Date().toISOString(); return { id: createId(), status: "active", createdAt: now, updatedAt: now, lastSavedAt: null, finishedAt: null, winningScore: APP_CONFIG.defaultWinningScore, players: [{ id: createId(), name: "Player 1" }, { id: createId(), name: "Player 2" }], hands: Array.from({ length: APP_CONFIG.initialVisibleHands }, createEmptyHand), winnerId: null, currentLeaderId: null } }
+        /* DATA ACCESS BOUNDARY
+           All game persistence goes through this repository.
+           To make the app multi-user later, replace this localStorage adapter
+           with Firebase/Supabase calls; the UI and game logic do not need to change. */
         const gameRepository = {
             async save(g) { const now = new Date().toISOString(), x = { ...g, updatedAt: now, lastSavedAt: now }; localStorage.setItem("ginRummyCurrentGame", JSON.stringify(x)); return x },
             async loadCurrentGame() { try { return JSON.parse(localStorage.getItem("ginRummyCurrentGame")) } catch { return null } },
@@ -926,6 +936,7 @@
             async archive(g) { const a = await this.loadFinishedGames(); a.push(g); localStorage.setItem("ginRummyFinishedGames", JSON.stringify(a)) },
             async deleteCurrentGame() { localStorage.removeItem("ginRummyCurrentGame") }
         };
+        /* Saved-player persistence uses the same replaceable repository pattern. */
         const playerRepository = {
             load() { try { const saved = JSON.parse(localStorage.getItem("ginRummySavedPlayers") || "null"); return Array.isArray(saved) ? saved : DEFAULT_SAVED_PLAYERS.slice() } catch { return DEFAULT_SAVED_PLAYERS.slice() } },
             save(players) { localStorage.setItem("ginRummySavedPlayers", JSON.stringify(players)) }
@@ -971,7 +982,7 @@
             for (const p of game.players) { const el = document.createElement("div"); el.className = "total-cell" + (p.id === winner?.id ? " winner" : ""); if (p.id === winner?.id) { el.innerHTML = `<span class="winner-total-wrap"><span>${totals[p.id]}</span><span class="ace-card">A♠</span></span>` } else { el.textContent = totals[p.id] } row.appendChild(el) }
             section.appendChild(row); scorecardElement.appendChild(section)
         }
-        function renderGameStatus() { gameStatusElement.textContent = game.status === "paused" ? "game paused" : game.status === "finished" ? "finished game" : "current game" }
+        function renderGameStatus() { gameStatusElement.textContent = "scorecard" }
         async function getAllTimeHighHand() { const finished = await gameRepository.loadFinishedGames(); let best = { score: null, name: "" }; for (const g of finished) { for (const h of g.hands) { for (const p of g.players) { const v = h.scores[p.id]; if (v !== undefined && v !== "" && (best.score === null || Number(v) > best.score)) best = { score: Number(v), name: p.name } } } } for (const h of completedHands()) { for (const p of game.players) { const v = h.scores[p.id]; if (v !== undefined && v !== "" && (best.score === null || Number(v) > best.score)) best = { score: Number(v), name: p.name } } } return best }
         async function renderScoreFooter() { const leader = determineLeader(); $("currentLeader").textContent = leader && completedHands().length ? leader.name : "—"; const best = await getAllTimeHighHand(); $("highHand").textContent = best.score === null ? "—" : `${best.score} by ${best.name}` }
 
@@ -1029,7 +1040,22 @@
 
         function showPage(page) { currentPage = page; document.querySelectorAll(".page").forEach(x => x.classList.remove("active")); $(`${page}Page`).classList.add("active"); document.querySelectorAll(".nav-btn").forEach(x => x.classList.toggle("active", x.dataset.page === page)); if (page === "score") renderGame(); if (page === "games") { showGamesList(); renderGames() } if (page === "stats") renderStats(); window.scrollTo(0, 0) }
         async function buildStats() { const games = await gameRepository.loadFinishedGames(), map = new Map(); let high = { score: null, name: "" }; for (const g of games) { const totals = {}; for (const p of g.players) { totals[p.id] = g.hands.reduce((t, h) => t + Number(h.scores[p.id] || 0), 0); if (!map.has(p.name)) map.set(p.name, { name: p.name, games: 0, wins: 0, points: 0 }); const s = map.get(p.name); s.games++; s.points += totals[p.id]; if (p.id === g.winnerId) s.wins++; for (const h of g.hands) { const v = h.scores[p.id]; if (v !== undefined && (high.score === null || Number(v) > high.score)) high = { score: Number(v), name: p.name } } } } return { games, players: [...map.values()].sort((a, b) => b.wins - a.wins), high } }
-        async function renderStats() { const s = await buildStats(), top = s.players[0], low = s.players.length ? [...s.players].sort((a, b) => (a.points / a.games) - (b.points / b.games))[0] : null; $("statsOverview").innerHTML = `<div class="stats-grid"><div class="card metric"><label>TOTAL GAMES</label><strong>${s.games.length}</strong><small>played</small></div><div class="card metric"><label>TOP PLAYER</label><strong class="red">${top?.name || "—"}</strong><small>${top ? `${top.wins} wins` : "no games yet"}</small></div><div class="card metric"><label>LOWEST AVG</label><strong>${low ? Math.round(low.points / low.games) : "—"}</strong><small>${low ? `by ${low.name}` : "—"}</small></div><div class="card metric"><label>HIGHEST HAND</label><strong class="red">${s.high.score ?? "—"}</strong><small>${s.high.name ? `by ${s.high.name}` : "—"}</small></div></div><div class="card player-summary"><div class="section-title" style="margin-bottom:8px">player summary</div><table class="summary-table"><thead><tr><th>player</th><th>games</th><th>wins</th><th>win %</th><th>total pts</th><th>avg/game</th></tr></thead><tbody>${s.players.length ? s.players.map(p => `<tr><td>${escapeHtml(p.name)}</td><td>${p.games}</td><td>${p.wins}</td><td>${Math.round(p.wins / p.games * 100)}%</td><td>${p.points}</td><td>${(p.points / p.games).toFixed(1)}</td></tr>`).join("") : '<tr><td colspan="6">No finished games yet.</td></tr>'}</tbody></table></div><div class="card record"><span>♜ &nbsp; all time high hand</span><span><strong>${s.high.score ?? "—"}</strong>${s.high.name ? ` &nbsp;by ${escapeHtml(s.high.name)}` : ""}</span></div>` }
+        let currentStatsTab = "overview";
+        async function renderStats() {
+            const s = await buildStats();
+            document.querySelectorAll("[data-stats-tab]").forEach(b => b.classList.toggle("active", b.dataset.statsTab === currentStatsTab));
+            if (currentStatsTab === "player") return renderStatsByPlayer(s);
+            if (currentStatsTab === "game") return renderStatsByGame(s);
+            const top = s.players[0], low = s.players.length ? [...s.players].sort((a, b) => (a.points / a.games) - (b.points / b.games))[0] : null;
+            $("statsOverview").innerHTML = `<div class="stats-grid"><div class="card metric"><label>TOTAL GAMES</label><strong>${s.games.length}</strong><small>played</small></div><div class="card metric"><label>TOP PLAYER</label><strong class="red">${top?.name || "—"}</strong><small>${top ? `${top.wins} wins` : "no games yet"}</small></div><div class="card metric"><label>LOWEST AVG</label><strong>${low ? Math.round(low.points / low.games) : "—"}</strong><small>${low ? `by ${low.name}` : "—"}</small></div><div class="card metric"><label>HIGHEST HAND</label><strong class="red">${s.high.score ?? "—"}</strong><small>${s.high.name ? `by ${s.high.name}` : "—"}</small></div></div><div class="card player-summary"><div class="section-title" style="margin-bottom:8px">player summary</div><table class="summary-table"><thead><tr><th>player</th><th>games</th><th>wins</th><th>win %</th><th>total pts</th><th>avg/game</th></tr></thead><tbody>${s.players.length ? s.players.map(p => `<tr><td>${escapeHtml(p.name)}</td><td>${p.games}</td><td>${p.wins}</td><td>${Math.round(p.wins / p.games * 100)}%</td><td>${p.points}</td><td>${(p.points / p.games).toFixed(1)}</td></tr>`).join("") : '<tr><td colspan="6">No finished games yet.</td></tr>'}</tbody></table></div><div class="card record"><span>♜ &nbsp; all time high hand</span><span><strong>${s.high.score ?? "—"}</strong>${s.high.name ? ` &nbsp;by ${escapeHtml(s.high.name)}` : ""}</span></div>`
+        }
+        function renderStatsByPlayer(s) {
+            $("statsOverview").innerHTML = `<div class="card player-summary"><div class="section-title" style="margin-bottom:8px">by player</div><table class="summary-table"><thead><tr><th>player</th><th>games</th><th>wins</th><th>win %</th><th>total pts</th><th>avg/game</th></tr></thead><tbody>${s.players.length ? s.players.map(p => `<tr><td>${escapeHtml(p.name)}</td><td>${p.games}</td><td>${p.wins}</td><td>${Math.round(p.wins / p.games * 100)}%</td><td>${p.points}</td><td>${(p.points / p.games).toFixed(1)}</td></tr>`).join("") : '<tr><td colspan="6">No finished games yet.</td></tr>'}</tbody></table></div>`
+        }
+        function renderStatsByGame(s) {
+            const games = s.games.slice().sort((a, b) => new Date(b.finishedAt || b.updatedAt) - new Date(a.finishedAt || a.updatedAt));
+            $("statsOverview").innerHTML = `<div class="card player-summary"><div class="section-title" style="margin-bottom:8px">by game</div><table class="summary-table"><thead><tr><th>date</th><th>winner</th><th>score</th><th>hands</th></tr></thead><tbody>${games.length ? games.map(g => { const w = g.players.find(p => p.id === g.winnerId); const score = w ? g.hands.reduce((t, h) => t + Number(h.scores[w.id] || 0), 0) : 0; return `<tr><td>${formatDate(g.finishedAt || g.updatedAt)}</td><td>${escapeHtml(w?.name || "—")}</td><td>${score}</td><td>${g.hands.length}</td></tr>` }).join("") : '<tr><td colspan="4">No finished games yet.</td></tr>'}</tbody></table></div>`
+        }
         async function renderGames() { const games = (await gameRepository.loadFinishedGames()).slice().sort((a, b) => new Date(b.finishedAt || b.updatedAt) - new Date(a.finishedAt || a.updatedAt)); $("gamesList").innerHTML = games.length ? games.map(g => { const w = g.players.find(p => p.id === g.winnerId); return `<button class="game-history-row" data-game-id="${g.id}"><div><strong>${escapeHtml(w?.name || "—")} won</strong><div class="muted" style="font-size:12px;margin-top:4px">${g.players.map(p => escapeHtml(p.name)).join(" · ")}</div></div><span class="muted" style="font-size:12px">${formatDate(g.finishedAt || g.updatedAt)}</span></button>` }).join("") : '<div class="empty-state">No finished games yet.</div>'; $("gamesList").querySelectorAll("[data-game-id]").forEach(b => b.onclick = () => openGameDetail(b.dataset.gameId)) }
         function showGamesList() { $("gamesListView").classList.remove("hidden"); $("gameDetailView").classList.add("hidden"); $("gameDetailView").innerHTML = "" }
         async function openGameDetail(gameId) { const games = await gameRepository.loadFinishedGames(), g = games.find(x => x.id === gameId); if (!g) return; const winner = g.players.find(p => p.id === g.winnerId), totals = Object.fromEntries(g.players.map(p => [p.id, g.hands.reduce((t, h) => t + Number(h.scores[p.id] || 0), 0)])); $("gamesListView").classList.add("hidden"); $("gameDetailView").classList.remove("hidden"); $("gameDetailView").innerHTML = `<div class="card game-detail"><div class="game-detail-head"><div><div class="section-title">${escapeHtml(winner?.name || "—")} won</div><div class="detail-meta">Ended: ${formatDateTime(g.finishedAt)}${g.lastSavedAt ? `<br>Last saved: ${formatDateTime(g.lastSavedAt)}` : ""}</div></div><button class="back-btn" id="backToGames">← games</button></div><div class="detail-scorecard"><table class="detail-table"><thead><tr><th>#</th>${g.players.map(p => `<th class="${p.id === g.winnerId ? "winner-col" : ""}">${escapeHtml(p.name)}</th>`).join("")}</tr></thead><tbody>${g.hands.map((h, i) => `<tr><td>${i + 1}</td>${g.players.map(p => `<td class="${p.id === g.winnerId ? "winner-col" : ""}">${h.scores[p.id] ?? "—"}</td>`).join("")}</tr>`).join("")}<tr class="detail-total"><td>Σ</td>${g.players.map(p => `<td class="${p.id === g.winnerId ? "winner-col" : ""}">${totals[p.id]}${p.id === g.winnerId ? ' <span class="ace-card">A♠</span>' : ""}</td>`).join("")}</tr></tbody></table></div></div>`; $("backToGames").onclick = showGamesList; window.scrollTo(0, 0) }
@@ -1045,6 +1071,7 @@
         $("finishButton").onclick = finishGame;
         $("addPlayerButton").onclick = addPlayer;
         document.querySelectorAll("[data-page]").forEach(b => b.addEventListener("click", () => showPage(b.dataset.page)));
+        document.querySelectorAll("[data-stats-tab]").forEach(b => b.addEventListener("click", () => { currentStatsTab = b.dataset.statsTab; renderStats() }));
         initializeApp();
     </script>
 </body>
