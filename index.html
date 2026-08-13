@@ -96,7 +96,7 @@
 
         .brand-name {
             font-family: "Cormorant Garamond", serif;
-            font-size: 52px;
+            font-size: 57px;
             font-weight: 700;
             font-style: italic;
             letter-spacing: -2px
@@ -737,6 +737,215 @@
             font-weight: 800
         }
 
+
+        /* THEME POLISH */
+        body[data-theme="poker"] .player-grid,
+        body[data-theme="poker"] .score-cell,
+        body[data-theme="poker"] .total-section,
+        body[data-theme="poker"] .total-row,
+        body[data-theme="poker"] .total-cell,
+        body[data-theme="poker"] .tab,
+        body[data-theme="poker"] .manual-name,
+        body[data-theme="poker"] .theme-choice,
+        body[data-theme="poker"] .player-list-add input {
+            background: #0f4938;
+            color: #fff8e7
+        }
+
+        body[data-theme="poker"] .add-player-bottom,
+        body[data-theme="poker"] .end-game-bottom {
+            background: #0f4938;
+            color: #fff8e7;
+            border-color: #d8b45f
+        }
+
+        body[data-theme="poker"] .end-game-bottom {
+            color: #ff8b82;
+            border-color: #ff8b82
+        }
+
+        body[data-theme="poker"] .game-menu button,
+        body[data-theme="poker"] .saved-player-name,
+        body[data-theme="poker"] .close-btn,
+        body[data-theme="poker"] .modal-head,
+        body[data-theme="poker"] .summary-table,
+        body[data-theme="poker"] .inline-score-table {
+            color: #fff8e7
+        }
+
+        body[data-theme="poker"] .game-menu button:hover,
+        body[data-theme="poker"] .player-header:hover,
+        body[data-theme="poker"] .theme-choice.active {
+            background: #1b604b
+        }
+
+        body[data-theme="poker"] .tab:not(.active) {
+            background: #0f4938;
+            color: #fff8e7
+        }
+
+        body[data-theme="poker"] .player-header.winner,
+        body[data-theme="poker"] .score-cell.winner,
+        body[data-theme="poker"] .total-cell.winner {
+            background: #7d2828;
+            color: #fff
+        }
+
+        body[data-theme="poker"] .score-cell:focus {
+            background: #fff8e7;
+            color: #092d23;
+            box-shadow: inset 0 0 0 2px #d8b45f
+        }
+
+        body[data-theme="poker"] .summary-table tr:first-of-type td:first-child,
+        body[data-theme="poker"] .inline-score-table .winner-col {
+            color: #ff9a91
+        }
+
+        body[data-theme="poker"] .inline-game-detail,
+        body[data-theme="poker"] .inline-score-table th {
+            background: #0b362a;
+            color: #fff8e7
+        }
+
+        body[data-theme="tropical"] {
+            --bg: #ffe58a;
+            --card: #fffdf5;
+            --navy: #073b4c;
+            --red: #e93f5c;
+            --gold: #ffb000;
+            --muted: #416b72;
+            --line: rgba(7, 59, 76, .20);
+            --soft: #d9fbf4;
+            --shadow: 0 10px 30px rgba(7, 59, 76, .12);
+            background:
+                radial-gradient(circle at 12% 12%, rgba(255, 78, 121, .42), transparent 23%),
+                radial-gradient(circle at 88% 18%, rgba(0, 199, 190, .42), transparent 25%),
+                radial-gradient(circle at 18% 78%, rgba(255, 183, 3, .42), transparent 27%),
+                linear-gradient(145deg, #fff0a8 0%, #bff7e8 52%, #ffb7c9 100%);
+            background-attachment: fixed;
+            color: var(--navy)
+        }
+
+        body[data-theme="tropical"] .card,
+        body[data-theme="tropical"] .player-grid,
+        body[data-theme="tropical"] .score-cell,
+        body[data-theme="tropical"] .total-section,
+        body[data-theme="tropical"] .total-row,
+        body[data-theme="tropical"] .total-cell,
+        body[data-theme="tropical"] .tabs,
+        body[data-theme="tropical"] .game-menu,
+        body[data-theme="tropical"] .modal-card,
+        body[data-theme="tropical"] .manual-name,
+        body[data-theme="tropical"] .theme-choice,
+        body[data-theme="tropical"] .player-list-add input {
+            background: #fffdf5;
+            color: #073b4c
+        }
+
+        body[data-theme="tropical"] .game-menu {
+            border-color: #00a7a0
+        }
+
+        body[data-theme="tropical"] .game-menu button:hover,
+        body[data-theme="tropical"] .player-header:hover {
+            background: #d9fbf4
+        }
+
+        body[data-theme="tropical"] .add-player-bottom {
+            background: #00a7a0;
+            border-color: #007b78;
+            color: #fff
+        }
+
+        body[data-theme="tropical"] .end-game-bottom {
+            background: #ef4f70;
+            border-color: #c92f50;
+            color: #fff
+        }
+
+        body[data-theme="tropical"] .tab:not(.active) {
+            background: #fff3b8;
+            color: #073b4c
+        }
+
+        body[data-theme="tropical"] .tab.active {
+            background: #007f83;
+            color: #fff
+        }
+
+        body[data-theme="tropical"] .player-header.winner,
+        body[data-theme="tropical"] .score-cell.winner,
+        body[data-theme="tropical"] .total-cell.winner {
+            background: #ef4f70;
+            color: #fff
+        }
+
+        body[data-theme="tropical"] .score-cell:focus {
+            background: #fff;
+            color: #073b4c;
+            box-shadow: inset 0 0 0 2px #007f83
+        }
+
+        body[data-theme="tropical"] .bottom-nav {
+            background: rgba(0, 127, 131, .96)
+        }
+
+        body[data-theme="tropical"] .nav-btn {
+            color: #d9fffb
+        }
+
+        body[data-theme="tropical"] .nav-btn.active {
+            background: #ffcf4a;
+            color: #073b4c
+        }
+
+        body[data-theme="tropical"] .inline-game-detail,
+        body[data-theme="tropical"] .inline-score-table th {
+            background: #d9fbf4;
+            color: #073b4c
+        }
+
+        body[data-theme="tropical"] .summary-table tr:first-of-type td:first-child,
+        body[data-theme="tropical"] .inline-score-table .winner-col {
+            color: #c92f50
+        }
+
+        body[data-theme="tropical"] .theme-choice.active {
+            background: #ffcf4a;
+            color: #073b4c
+        }
+
+        /* Theme-safe winner icon */
+        .leader-icon {
+            flex: 0 0 auto;
+            display: inline-grid;
+            place-items: center;
+            min-width: 20px;
+            height: 24px;
+            padding: 0 3px;
+            border: 1px solid var(--navy);
+            border-radius: 5px;
+            background: var(--card);
+            color: var(--navy);
+            font-size: 11px;
+            font-weight: 800;
+            line-height: 1
+        }
+
+        body[data-theme="poker"] .leader-icon {
+            background: #d8b45f;
+            border-color: #f5dd94;
+            color: #082b22
+        }
+
+        body[data-theme="tropical"] .leader-icon {
+            background: #ffcf4a;
+            border-color: #e9a900;
+            color: #073b4c;
+            font-size: 14px
+        }
+
         /* PLAYER LIST / PICKER */
         .modal-backdrop {
             position: fixed;
@@ -902,7 +1111,7 @@
             }
 
             .brand-name {
-                font-size: 46px
+                font-size: 51px
             }
 
             .player-grid,
@@ -1039,6 +1248,13 @@
             themeRepository.save(theme)
         }
 
+        function getLeaderIcon() {
+            const theme = themeRepository.load();
+            if (theme === "poker") return "●●";
+            if (theme === "tropical") return "☀";
+            return "A♠"
+        }
+
         function openThemePicker() {
             const current = themeRepository.load();
             openModal(`<div class="modal-head"><h3>change theme</h3><button class="close-btn" data-close-modal>×</button></div><div class="theme-options"><button class="theme-choice ${current === "classic" ? "active" : ""}" data-theme-choice="classic">Classic</button><button class="theme-choice ${current === "poker" ? "active" : ""}" data-theme-choice="poker">Poker Night</button><button class="theme-choice ${current === "tropical" ? "active" : ""}" data-theme-choice="tropical">Tropical</button></div>`);
@@ -1089,7 +1305,7 @@
                 const el = document.createElement("div"); el.className = "player-header" + (p.id === winner?.id ? " winner" : ""); el.title = "Tap to choose a saved player or edit this name";
                 const wrap = document.createElement("div"); wrap.className = "player-name-wrap";
                 const name = document.createElement("span"); name.className = "player-name-text"; name.textContent = p.name.toUpperCase(); wrap.appendChild(name);
-                if (p.id === leader?.id) { const ace = document.createElement("span"); ace.className = "leader-ace"; ace.textContent = "A♠"; wrap.appendChild(ace) }
+                if (p.id === leader?.id) { const icon = document.createElement("span"); icon.className = "leader-icon"; icon.textContent = getLeaderIcon(); wrap.appendChild(icon) }
                 el.appendChild(wrap); el.onclick = () => openPlayerPicker(p.id); header.appendChild(el)
             }
             scorecardElement.appendChild(header)
@@ -1149,8 +1365,9 @@
         function updateLeaderAce() {
             const leader = getDisplayedLeader();
             document.querySelectorAll(".player-header").forEach((header, i) => {
+                header.querySelector(".leader-icon")?.remove();
                 header.querySelector(".leader-ace")?.remove();
-                if (game.players[i]?.id === leader?.id) { const ace = document.createElement("span"); ace.className = "leader-ace"; ace.textContent = "A♠"; header.querySelector(".player-name-wrap")?.appendChild(ace) }
+                if (game.players[i]?.id === leader?.id) { const icon = document.createElement("span"); icon.className = "leader-icon"; icon.textContent = getLeaderIcon(); header.querySelector(".player-name-wrap")?.appendChild(icon) }
             });
             requestAnimationFrame(fitPlayerNames)
         }
