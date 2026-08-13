@@ -3,1482 +3,845 @@
 
 <head>
     <meta charset="UTF-8" />
-
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-
-    <title>Scorecard</title>
+    <meta name="theme-color" content="#fbfaf8" />
+    <title>Gin 500</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Raleway:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@1,600;1,700&family=Inter:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet">
     <style>
         :root {
-            --background: #f4f4f2;
-            --card: #ffffff;
-            --text: #171717;
-            --muted: #777777;
-            --border: #ddddda;
-            --border-strong: #222222;
-            --input-background: #ffffff;
-            --hover: #f2f2ef;
-            --danger: #b42318;
-
-            --radius: 14px;
+            --bg: #fbfaf8;
+            --card: #fff;
+            --navy: #071b35;
+            --red: #b5231d;
+            --gold: #a88645;
+            --muted: #737b86;
+            --line: #e3e5e8;
+            --soft: #f5f6f7;
+            --shadow: 0 8px 28px rgba(7, 27, 53, .07);
+            --radius: 18px
         }
 
         * {
-            box-sizing: border-box;
+            box-sizing: border-box
         }
 
         html,
         body {
             margin: 0;
             min-height: 100%;
+            background: var(--bg);
+            color: var(--navy)
         }
 
         body {
-            font-family: "Raleway", sans-serif;
-            background: var(--background);
-            color: var(--text);
+            font-family: Inter, system-ui, sans-serif
         }
 
         button,
         input {
-            font: inherit;
+            font: inherit
         }
 
         button {
             cursor: pointer;
+            color: inherit
         }
 
-        /* --------------------------------------------------
-    APP
-    -------------------------------------------------- */
-
-        .app-shell {
-            width: min(100%, 720px);
-            margin: 0 auto;
-            padding:
-                max(24px, env(safe-area-inset-top)) 16px max(30px, env(safe-area-inset-bottom));
+        .hidden {
+            display: none !important
         }
 
-        .game-header {
-            position: relative;
+        .app {
+            width: min(100%, 760px);
+            min-height: 100vh;
+            margin: auto;
+            padding: max(18px, env(safe-area-inset-top)) 14px calc(92px + env(safe-area-inset-bottom))
+        }
 
+        .topbar {
             display: flex;
             align-items: center;
             justify-content: space-between;
-
-            margin-bottom: 18px;
+            padding: 4px 4px 16px
         }
 
-        .game-header h1 {
-            margin: 0;
-            font-size: 28px;
-            line-height: 1.1;
+        .brand {
+            text-align: left;
+            line-height: .8
         }
 
-        .game-status {
-            margin: 6px 0 0;
-            color: var(--muted);
-            font-size: 14px;
+        .brand-suits {
+            font-size: 13px;
+            letter-spacing: 4px;
+            text-align: center;
+            margin: 0 0 3px 9px
         }
 
-        /* --------------------------------------------------
-    MENU
-    -------------------------------------------------- */
+        .brand-suits .red {
+            color: var(--red)
+        }
+
+        .brand-name {
+            font-family: "Cormorant Garamond", serif;
+            font-size: 43px;
+            font-weight: 700;
+            font-style: italic;
+            letter-spacing: -2px
+        }
+
+        .brand-name .red {
+            color: var(--red)
+        }
+
+        .brand-sub {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            margin-top: 8px;
+            font-size: 9px;
+            font-weight: 700;
+            letter-spacing: 4px
+        }
+
+        .brand-sub:before,
+        .brand-sub:after {
+            content: "";
+            width: 22px;
+            height: 1px;
+            background: var(--gold)
+        }
 
         .menu-button {
             width: 44px;
             height: 44px;
-
             border: 0;
-            border-radius: 50%;
-
             background: transparent;
-            color: var(--text);
-
-            font-size: 30px;
-            line-height: 1;
+            border-radius: 50%;
+            font-size: 28px
         }
 
         .menu-button:hover {
-            background: rgba(0, 0, 0, 0.05);
+            background: var(--soft)
+        }
+
+        .topbar {
+            position: relative
         }
 
         .game-menu {
             position: absolute;
-            z-index: 20;
-            top: 52px;
-            right: 0;
-
-            width: 205px;
-
+            z-index: 50;
+            right: 4px;
+            top: 58px;
+            width: 215px;
             padding: 8px;
-
-            background: #ffffff;
-            border: 1px solid var(--border);
-            border-radius: 12px;
-
-            box-shadow:
-                0 12px 35px rgba(0, 0, 0, 0.13);
+            background: #fff;
+            border: 1px solid var(--line);
+            border-radius: 14px;
+            box-shadow: var(--shadow)
         }
 
         .game-menu button {
             display: block;
             width: 100%;
-
-            padding: 11px 12px;
-
+            padding: 11px;
             border: 0;
-            border-radius: 8px;
-
+            border-radius: 9px;
             background: transparent;
-            color: var(--text);
-
-            text-align: left;
+            text-align: left
         }
 
         .game-menu button:hover {
-            background: var(--hover);
+            background: var(--soft)
         }
 
         .game-menu .danger {
-            color: var(--danger);
+            color: var(--red)
         }
 
         .menu-divider {
             height: 1px;
-            margin: 6px 4px;
-
-            background: var(--border);
+            background: var(--line);
+            margin: 5px
         }
 
-        .hidden {
-            display: none;
+        .page {
+            display: none
         }
 
-        /* --------------------------------------------------
-    SCORECARD
-    -------------------------------------------------- */
+        .page.active {
+            display: block
+        }
+
+        .card {
+            background: var(--card);
+            border: 1px solid var(--line);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow)
+        }
+
+        .section-title {
+            font-size: 13px;
+            font-weight: 800;
+            letter-spacing: .06em;
+            text-transform: uppercase
+        }
+
+        .muted {
+            color: var(--muted)
+        }
+
+        /* HOME */
+        .welcome {
+            padding: 22px;
+            margin-top: 8px
+        }
+
+        .welcome-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 14px
+        }
+
+        .welcome h2 {
+            margin: 0;
+            font-size: 22px
+        }
+
+        .welcome h2 span {
+            color: var(--red)
+        }
+
+        .welcome p {
+            margin: 7px 0 0;
+            color: var(--muted);
+            font-size: 13px
+        }
+
+        .primary {
+            border: 0;
+            border-radius: 10px;
+            background: var(--navy);
+            color: #fff;
+            padding: 13px 18px;
+            font-weight: 700
+        }
+
+        .current-card {
+            margin-top: 20px;
+            border: 1px solid var(--line);
+            border-radius: 14px;
+            overflow: hidden
+        }
+
+        .current-card-head {
+            display: flex;
+            justify-content: space-between;
+            padding: 15px 15px 10px;
+            font-size: 11px;
+            font-weight: 700
+        }
+
+        .home-player-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 15px;
+            border-top: 1px solid var(--line);
+            font-weight: 600
+        }
+
+        .home-player-row.leader {
+            color: var(--red)
+        }
+
+        .continue-btn {
+            width: calc(100% - 28px);
+            margin: 14px;
+            border: 1px solid #ccd1d7;
+            border-radius: 9px;
+            background: #fff;
+            padding: 12px;
+            text-align: left;
+            font-weight: 600
+        }
+
+        .recent {
+            padding: 20px;
+            margin-top: 18px
+        }
+
+        .recent-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px
+        }
+
+        .recent-row {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 12px;
+            padding: 13px 2px;
+            border-top: 1px solid var(--line);
+            font-size: 13px
+        }
+
+        .recent-row .winner {
+            font-weight: 700
+        }
+
+        .crown {
+            color: var(--gold)
+        }
+
+        .empty-state {
+            padding: 18px 0;
+            color: var(--muted);
+            font-size: 13px
+        }
+
+        /* SCORECARD */
+        .page-heading {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin: 5px 2px 14px
+        }
+
+        .eyebrow {
+            font-size: 13px;
+            font-weight: 700
+        }
+
+        .outline-danger {
+            border: 1px solid var(--red);
+            background: #fff;
+            color: var(--red);
+            border-radius: 10px;
+            padding: 10px 14px;
+            font-weight: 700
+        }
 
         .scorecard-wrapper {
-            overflow: hidden;
-
-            background: var(--card);
-
-            border: 1px solid var(--border);
-            border-radius: var(--radius);
-
-            box-shadow:
-                0 2px 8px rgba(0, 0, 0, 0.04);
-        }
-
-        .scorecard {
-            width: 100%;
+            overflow: hidden
         }
 
         .score-scroll-area {
-            max-height: calc(100vh - 245px);
-            min-height: 220px;
-
             overflow-y: auto;
+            max-height: calc(100vh - 365px);
+            min-height: 330px
         }
-
-        /* --------------------------------------------------
-    GRID
-    -------------------------------------------------- */
 
         .player-grid,
         .hand-row,
         .total-row {
             display: grid;
-
-            grid-template-columns:
-                repeat(var(--player-count), minmax(0, 1fr));
+            grid-template-columns: 44px repeat(var(--player-count), minmax(0, 1fr))
         }
 
         .player-grid {
             position: sticky;
             top: 0;
             z-index: 5;
+            background: #fff;
+            border-bottom: 1px solid var(--line)
+        }
 
-            background: var(--card);
-
-            border-bottom: 1px solid var(--border);
+        .round-head,
+        .player-header {
+            padding: 14px 5px;
+            text-align: center;
+            font-size: 11px;
+            font-weight: 800
         }
 
         .player-header {
-            min-width: 0;
-
-            padding: 15px 8px 13px;
-
-            border-right: 1px solid var(--border);
-
-            text-align: center;
-        }
-
-        .player-header:last-child {
-            border-right: 0;
-        }
-
-        .player-name {
+            border-left: 1px solid var(--line);
             overflow: hidden;
-
-            font-weight: 650;
-
             text-overflow: ellipsis;
-            white-space: nowrap;
+            white-space: nowrap
+        }
+
+        .player-header.leader {
+            color: var(--red);
+            background: #fff9f8
         }
 
         .hand-row {
-            border-bottom: 1px solid var(--border);
+            border-bottom: 1px solid var(--line)
+        }
+
+        .round-number {
+            display: grid;
+            place-items: center;
+            color: var(--muted);
+            font-size: 12px;
+            font-weight: 700
         }
 
         .score-cell {
             min-width: 0;
-            height: 52px;
-
+            height: 53px;
             padding: 0;
-
             border: 0;
-            border-right: 1px solid var(--border);
-
-            background: var(--input-background);
-
-            color: var(--text);
-
+            border-left: 1px solid var(--line);
+            background: #fff;
+            color: var(--navy);
             text-align: center;
-
             outline: none;
-
-            -moz-appearance: textfield;
-        }
-
-        .score-cell:last-child {
-            border-right: 0;
+            font-size: 16px;
+            font-weight: 600;
+            -moz-appearance: textfield
         }
 
         .score-cell::-webkit-inner-spin-button,
         .score-cell::-webkit-outer-spin-button {
-            margin: 0;
             -webkit-appearance: none;
+            margin: 0
         }
 
         .score-cell:focus {
             position: relative;
             z-index: 2;
+            box-shadow: inset 0 0 0 2px var(--navy)
+        }
 
-            box-shadow:
-                inset 0 0 0 2px #222222;
+        .score-cell.leader {
+            background: #fff9f8;
+            color: var(--red)
         }
 
         .score-cell::placeholder {
-            color: #c7c7c3;
+            color: #c9cdd2
         }
 
-        /* --------------------------------------------------
-    TOTALS
-    -------------------------------------------------- */
-
         .total-section {
-            position: sticky;
-            bottom: 0;
-            z-index: 6;
-
-            background: var(--card);
-
-            border-top: 4px solid var(--border-strong);
+            border-top: 3px solid var(--navy);
+            background: #fff
         }
 
         .total-label {
-            padding: 8px 10px 4px;
-
+            padding: 8px 12px 4px;
+            font-size: 10px;
+            font-weight: 800;
+            letter-spacing: .08em;
             color: var(--muted);
-
-            font-size: 11px;
-            font-weight: 700;
-
-            letter-spacing: 0.08em;
-            text-transform: uppercase;
+            text-transform: uppercase
         }
 
         .total-row {
-            background: #f6f6f3;
+            background: #fafafa
+        }
+
+        .total-spacer {
+            display: grid;
+            place-items: center;
+            font-size: 10px;
+            color: var(--muted);
+            font-weight: 800
         }
 
         .total-cell {
-            min-width: 0;
-
-            padding: 14px 8px 17px;
-
-            border-right: 1px solid var(--border-strong);
-
-            font-size: 21px;
-            font-weight: 750;
-
+            padding: 13px 4px 15px;
+            border-left: 1px solid var(--line);
             text-align: center;
+            font-size: 18px;
+            font-weight: 800
         }
 
-        .total-cell:last-child {
-            border-right: 0;
+        .total-cell.leader {
+            color: var(--red);
+            background: #fff9f8
         }
 
-        /* --------------------------------------------------
-    STATUS MESSAGE
-    -------------------------------------------------- */
+        .score-footer {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            margin-top: 16px;
+            overflow: hidden
+        }
+
+        .stat-mini {
+            padding: 16px;
+            text-align: center
+        }
+
+        .stat-mini+.stat-mini {
+            border-left: 1px solid var(--line)
+        }
+
+        .stat-mini label {
+            display: block;
+            font-size: 9px;
+            font-weight: 800;
+            letter-spacing: .04em
+        }
+
+        .stat-mini strong {
+            display: block;
+            margin-top: 5px;
+            font-size: 18px;
+            color: var(--red)
+        }
 
         .message {
             min-height: 28px;
-
-            padding: 12px 4px;
-
+            padding: 10px 4px;
             color: var(--muted);
-
-            font-size: 13px;
-
-            text-align: center;
+            font-size: 12px;
+            text-align: center
         }
 
-        /* --------------------------------------------------
-    MOBILE
-    -------------------------------------------------- */
+        /* STATS */
+        .stats-title {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            margin: 8px 4px 16px;
+            font-size: 23px;
+            font-weight: 800
+        }
 
-        @media (max-width: 520px) {
+        .tabs {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            overflow: hidden;
+            margin-bottom: 18px
+        }
 
-            .app-shell {
+        .tab {
+            padding: 12px 5px;
+            border: 0;
+            border-right: 1px solid var(--line);
+            background: #fff;
+            font-size: 12px;
+            font-weight: 700
+        }
+
+        .tab:last-child {
+            border-right: 0
+        }
+
+        .tab.active {
+            background: var(--navy);
+            color: #fff
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px
+        }
+
+        .metric {
+            padding: 20px 10px;
+            text-align: center
+        }
+
+        .metric label {
+            display: block;
+            font-size: 10px;
+            font-weight: 800
+        }
+
+        .metric strong {
+            display: block;
+            margin: 8px 0 2px;
+            font-size: 27px
+        }
+
+        .metric strong.red {
+            color: var(--red)
+        }
+
+        .metric small {
+            color: var(--muted)
+        }
+
+        .player-summary {
+            margin-top: 16px;
+            padding: 18px;
+            overflow: auto
+        }
+
+        .summary-table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 520px;
+            font-size: 12px
+        }
+
+        .summary-table th,
+        .summary-table td {
+            padding: 11px 7px;
+            border-bottom: 1px solid var(--line);
+            text-align: right
+        }
+
+        .summary-table th:first-child,
+        .summary-table td:first-child {
+            text-align: left
+        }
+
+        .summary-table th {
+            font-size: 9px;
+            text-transform: uppercase
+        }
+
+        .summary-table tr:first-of-type td:first-child {
+            color: var(--red);
+            font-weight: 800
+        }
+
+        .record {
+            margin-top: 16px;
+            padding: 14px 18px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 12px
+        }
+
+        .record strong {
+            color: var(--red);
+            font-size: 18px
+        }
+
+        /* GAMES */
+        .games-list {
+            padding: 18px
+        }
+
+        .game-history-row {
+            padding: 14px 2px;
+            border-top: 1px solid var(--line);
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 10px
+        }
+
+        .game-history-row:first-of-type {
+            border-top: 0
+        }
+
+        .game-history-row strong {
+            color: var(--red)
+        }
+
+        /* NAV */
+        .bottom-nav {
+            position: fixed;
+            z-index: 40;
+            left: 50%;
+            bottom: 0;
+            transform: translateX(-50%);
+            width: min(100%, 760px);
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            padding-bottom: env(safe-area-inset-bottom);
+            background: rgba(255, 255, 255, .96);
+            border-top: 1px solid var(--line);
+            box-shadow: 0 -5px 20px rgba(7, 27, 53, .05);
+            backdrop-filter: blur(12px)
+        }
+
+        .nav-btn {
+            border: 0;
+            background: transparent;
+            padding: 12px 5px 10px;
+            font-size: 11px;
+            color: #5e6875
+        }
+
+        .nav-icon {
+            display: block;
+            font-size: 21px;
+            margin-bottom: 3px
+        }
+
+        .nav-btn.active {
+            color: #0866d9;
+            font-weight: 700
+        }
+
+        @media(max-width:520px) {
+            .app {
                 padding-left: 10px;
-                padding-right: 10px;
+                padding-right: 10px
             }
 
-            .game-header h1 {
-                font-size: 24px;
+            .brand-name {
+                font-size: 38px
+            }
+
+            .welcome {
+                padding: 17px
+            }
+
+            .welcome-head {
+                align-items: flex-start
+            }
+
+            .welcome h2 {
+                font-size: 19px
+            }
+
+            .primary {
+                padding: 11px 13px
+            }
+
+            .player-grid,
+            .hand-row,
+            .total-row {
+                grid-template-columns: 32px repeat(var(--player-count), minmax(0, 1fr))
             }
 
             .player-header {
-                padding-left: 4px;
-                padding-right: 4px;
-            }
-
-            .player-name {
-                font-size: 14px;
+                font-size: 10px
             }
 
             .score-cell {
-                height: 55px;
-                font-size: 18px;
+                height: 52px;
+                font-size: 16px
             }
 
-            .total-cell {
-                font-size: 19px;
+            .score-scroll-area {
+                max-height: calc(100vh - 345px)
+            }
+
+            .stats-grid {
+                gap: 9px
+            }
+
+            .metric {
+                padding: 17px 8px
             }
         }
     </style>
 </head>
 
 <body>
-    <main class="app-shell">
-
-        <header class="game-header">
-            <div>
-                <h1>gin rummy scorecard</h1>
-                <p id="gameStatus" class="game-status">Current Game</p>
+    <main class="app">
+        <header class="topbar">
+            <div class="brand" aria-label="Gin 500 Gin Rummy">
+                <div class="brand-suits">♠ <span class="red">♥ ♦</span> ♣</div>
+                <div class="brand-name">Gin <span class="red">500</span></div>
+                <div class="brand-sub">GIN RUMMY</div>
             </div>
-
-            <button id="menuButton" class="menu-button" type="button" aria-label="Game menu" aria-expanded="false">
-                ⋮
-            </button>
-
+            <button id="menuButton" class="menu-button" type="button" aria-label="Game menu">☰</button>
             <div id="gameMenu" class="game-menu hidden">
-                <button type="button" data-action="save">
-                    Save Progress
-                </button>
-
-                <button type="button" data-action="pause">
-                    Pause Game
-                </button>
-
-                <button type="button" data-action="finish">
-                    Finish Game
-                </button>
-
-                <div class="menu-divider"></div>
-
-                <button type="button" data-action="add-player">
-                    Add Player
-                </button>
-
-                <button type="button" data-action="remove-player">
-                    Remove Player
-                </button>
-
-                <div class="menu-divider"></div>
-
-                <button type="button" data-action="settings">
-                    Settings
-                </button>
-
-                <button type="button" data-action="delete" class="danger">
-                    Delete Game
-                </button>
+                <button data-action="save">Save Progress</button><button data-action="pause">Pause Game</button><button
+                    data-action="finish">Finish Game</button>
+                <div class="menu-divider"></div><button data-action="add-player">Add Player</button><button
+                    data-action="remove-player">Remove Player</button>
+                <div class="menu-divider"></div><button data-action="settings">Winning Score</button><button
+                    data-action="delete" class="danger">Delete Current Game</button>
             </div>
         </header>
 
-        <section class="scorecard-wrapper">
-
-            <div id="scorecard" class="scorecard">
-                <!-- JavaScript builds the score grid here -->
+        <section id="homePage" class="page active">
+            <div class="card welcome">
+                <div class="welcome-head">
+                    <div>
+                        <h2>ready to play?</h2>
+                        <p>Keep score, settle the winner.</p>
+                    </div><button id="newGameButton" class="primary">＋ new game</button>
+                </div>
+                <div id="homeCurrentGame"></div>
             </div>
-
+            <div class="card recent">
+                <div class="recent-head"><span class="section-title">recent games</span><button class="nav-link"
+                        data-page="games" style="border:0;background:none;font-size:12px">view all →</button></div>
+                <div id="recentGames"></div>
+            </div>
         </section>
 
-        <div id="message" class="message" aria-live="polite"></div>
+        <section id="scorePage" class="page">
+            <div class="page-heading"><span id="gameStatus" class="eyebrow">current game</span><button id="finishButton"
+                    class="outline-danger">⚑ end game</button></div>
+            <section class="card scorecard-wrapper">
+                <div id="scorecard"></div>
+            </section>
+            <div class="card score-footer">
+                <div class="stat-mini"><label>CURRENT LEADER</label><strong id="currentLeader">—</strong></div>
+                <div class="stat-mini"><label>HIGH HAND (ALL TIME)</label><strong id="highHand">—</strong></div>
+            </div>
+            <div id="message" class="message" aria-live="polite"></div>
+        </section>
 
+        <section id="statsPage" class="page">
+            <div class="stats-title">▥ <span>statistics</span></div>
+            <div class="card tabs"><button class="tab active">overview</button><button class="tab">by
+                    player</button><button class="tab">by game</button></div>
+            <div id="statsOverview"></div>
+        </section>
+
+        <section id="gamesPage" class="page">
+            <div class="stats-title">▱ <span>game history</span></div>
+            <div class="card games-list" id="gamesList"></div>
+        </section>
     </main>
 
+    <nav class="bottom-nav" aria-label="Main navigation">
+        <button class="nav-btn active" data-page="home"><span class="nav-icon">⌂</span>home</button>
+        <button class="nav-btn" data-page="stats"><span class="nav-icon">▥</span>stats</button>
+        <button class="nav-btn" data-page="games"><span class="nav-icon">▱</span>games</button>
+    </nav>
+
     <script>
-        /* ==================================================
-            GIN RUMMY SCOREKEEPER
-            CHECKPOINT 1
-        
-            UI:
-            - Score grid
-            - Enter moves to next player
-            - New row created automatically
-            - Totals remain below hands
-            - Game menu
-            - Add/remove players
-        
-            DATA:
-            - Game state is kept separate from drawing/UI
-            - Storage functions are isolated
-            - Firebase can replace the storage layer later
-            ================================================== */
-
-
-        /* ==================================================
-        CONFIG
-        ================================================== */
-
-        const APP_CONFIG = {
-            minPlayers: 2,
-            maxPlayers: 4,
-            defaultWinningScore: 500
-        };
-
-
-        /* ==================================================
-        GAME MODEL
-    
-        This is intentionally database-friendly.
-    
-        Later, the same object can be stored in Firebase
-        without rebuilding the scorecard logic.
-        ================================================== */
-
-        function createNewGame() {
-            const now = new Date().toISOString();
-
-            return {
-                id: createId(),
-
-                status: "active",
-
-                createdAt: now,
-                updatedAt: now,
-                finishedAt: null,
-
-                winningScore: APP_CONFIG.defaultWinningScore,
-
-                players: [
-                    {
-                        id: createId(),
-                        name: "Player 1"
-                    },
-                    {
-                        id: createId(),
-                        name: "Player 2"
-                    }
-                ],
-
-                hands: [
-                    createEmptyHand()
-                ],
-
-                winnerId: null,
-
-                currentLeaderId: null
-            };
-        }
-
-
-        function createEmptyHand() {
-            return {
-                id: createId(),
-                scores: {}
-            };
-        }
-
-
-        function createId() {
-            if (
-                typeof crypto !== "undefined" &&
-                typeof crypto.randomUUID === "function"
-            ) {
-                return crypto.randomUUID();
-            }
-
-            return (
-                Date.now().toString(36) +
-                Math.random().toString(36).slice(2)
-            );
-        }
-
-
-        /* ==================================================
-        DATABASE / STORAGE LAYER
-    
-        IMPORTANT:
-    
-        UI code does NOT directly use localStorage.
-    
-        These functions are our storage boundary.
-    
-        When Firebase is added later, we replace these
-        functions instead of rewriting the app.
-        ================================================== */
-
-        const gameRepository = {
-
-            async save(game) {
-                const gameToSave = {
-                    ...game,
-                    updatedAt: new Date().toISOString()
-                };
-
-                localStorage.setItem(
-                    "ginRummyCurrentGame",
-                    JSON.stringify(gameToSave)
-                );
-
-                return gameToSave;
-            },
-
-
-            async loadCurrentGame() {
-                const saved = localStorage.getItem(
-                    "ginRummyCurrentGame"
-                );
-
-                if (!saved) {
-                    return null;
-                }
-
-                try {
-                    return JSON.parse(saved);
-                } catch {
-                    return null;
-                }
-            },
-
-
-            async archive(game) {
-                const savedGames = JSON.parse(
-                    localStorage.getItem("ginRummyFinishedGames") ||
-                    "[]"
-                );
-
-                savedGames.push(game);
-
-                localStorage.setItem(
-                    "ginRummyFinishedGames",
-                    JSON.stringify(savedGames)
-                );
-            },
-
-
-            async deleteCurrentGame() {
-                localStorage.removeItem(
-                    "ginRummyCurrentGame"
-                );
-            }
-
-        };
-
-
-        /* ==================================================
-        APP STATE
-    
-        game is the single source of truth.
-        ================================================== */
-
-        let game = null;
-        let newRowTimer = null;
-
-        /* ==================================================
-        ELEMENT REFERENCES
-        ================================================== */
-
-        const scorecardElement =
-            document.getElementById("scorecard");
-
-        const menuButton =
-            document.getElementById("menuButton");
-
-        const gameMenu =
-            document.getElementById("gameMenu");
-
-        const gameStatusElement =
-            document.getElementById("gameStatus");
-
-        const messageElement =
-            document.getElementById("message");
-
-
-        /* ==================================================
-        GAME CALCULATIONS
-    
-        No DOM access in these functions.
-        ================================================== */
-
-        function getPlayerTotal(playerId) {
-            return game.hands.reduce(
-                (total, hand) => {
-                    const value = hand.scores[playerId];
-
-                    if (
-                        value === undefined ||
-                        value === null ||
-                        value === ""
-                    ) {
-                        return total;
-                    }
-
-                    return total + Number(value);
-                },
-                0
-            );
-        }
-
-
-        function getTotals() {
-            const totals = {};
-
-            for (const player of game.players) {
-                totals[player.id] =
-                    getPlayerTotal(player.id);
-            }
-
-            return totals;
-        }
-
-
-        function isHandComplete(hand) {
-            return game.players.every(player => {
-                const value = hand.scores[player.id];
-
-                return (
-                    value !== undefined &&
-                    value !== null &&
-                    value !== ""
-                );
-            });
-        }
-
-
-        function ensureBlankHandExists() {
-            const lastHand =
-                game.hands[game.hands.length - 1];
-
-            if (!lastHand || isHandComplete(lastHand)) {
-                game.hands.push(createEmptyHand());
-            }
-        }
-
-
-        function determineWinner() {
-
-            const totals = getTotals();
-
-            let winner = null;
-            let highestScore = -Infinity;
-
-            for (const player of game.players) {
-
-                const score = totals[player.id];
-
-                if (score > highestScore) {
-                    highestScore = score;
-                    winner = player;
-                }
-            }
-
-            if (highestScore >= game.winningScore) {
-                game.currentLeaderId = winner.id;
-                return winner;
-            }
-
-            game.currentLeaderId = null;
-            return null;
-        }
-
-
-        /* ==================================================
-        RENDERING
-    
-        Drawing only reads game state.
-        ================================================== */
-
-        function renderGame() {
-            scorecardElement.innerHTML = "";
-
-            scorecardElement.style.setProperty(
-                "--player-count",
-                game.players.length
-            );
-
-            renderPlayerHeaders();
-
-            const scrollArea =
-                document.createElement("div");
-
-            scrollArea.className =
-                "score-scroll-area";
-
-            renderHands(scrollArea);
-
-            scorecardElement.appendChild(
-                scrollArea
-            );
-
-            renderTotals();
-
-            renderGameStatus();
-        }
-
-
-        function renderPlayerHeaders() {
-
-            const header = document.createElement("div");
-            header.className = "player-grid";
-
-            determineWinner();
-
-            for (const player of game.players) {
-                const playerHeader = document.createElement("div");
-                playerHeader.className = "player-header";
-
-                if (player.id === game.currentLeaderId) {
-                    playerHeader.style.background = "rgba(70,140,255,0.10)";
-                }
-
-
-                const playerName = document.createElement("div");
-                playerName.className = "player-name";
-
-                playerName.textContent = player.name.toLowerCase();
-                playerName.title = "Click to rename";
-
-                playerName.addEventListener(
-                    "click",
-                    () => renamePlayer(player.id)
-                );
-
-                playerHeader.appendChild(playerName);
-
-                header.appendChild(playerHeader);
-            }
-
-            scorecardElement.appendChild(header);
-        }
-
-        function renderHands(container) {
-
-            determineWinner();
-
-            game.hands.forEach((hand, handIndex) => {
-
-                const row = document.createElement("div");
-                row.className = "hand-row";
-
-                game.players.forEach((player, playerIndex) => {
-
-                    const input = document.createElement("input");
-
-                    input.className = "score-cell";
-
-                    if (player.id === game.currentLeaderId) {
-                        input.style.background = "rgba(70,140,255,0.10)";
-                    }
-
-                    input.type = "number";
-                    input.inputMode = "numeric";
-                    input.autocomplete = "off";
-                    input.placeholder = "—";
-
-                    input.dataset.handIndex = handIndex;
-                    input.dataset.playerIndex = playerIndex;
-                    input.dataset.playerId = player.id;
-
-                    const score = hand.scores[player.id];
-
-                    input.value =
-                        score === undefined
-                            ? ""
-                            : score;
-
-                    input.addEventListener(
-                        "input",
-                        handleScoreInput
-                    );
-
-                    input.addEventListener(
-                        "keydown",
-                        handleScoreKeyDown
-                    );
-
-                    row.appendChild(input);
-
-                });
-
-                container.appendChild(row);
-
-            });
-
-        }
-        function renderTotals() {
-
-            determineWinner();
-
-            const totalSection =
-                document.createElement("div");
-
-            totalSection.className =
-                "total-section";
-
-            const label =
-                document.createElement("div");
-
-            label.className =
-                "total-label";
-
-            label.textContent = "total";
-
-            const totalRow =
-                document.createElement("div");
-
-            totalRow.className =
-                "total-row";
-
-            const totals = getTotals();
-
-            for (const player of game.players) {
-
-                const total =
-                    document.createElement("div");
-
-                total.className =
-                    "total-cell";
-
-                if (player.id === game.currentLeaderId) {
-                    total.style.background =
-                        "rgba(70,140,255,0.10)";
-                }
-
-                total.textContent =
-                    totals[player.id] +
-                    (player.id === game.currentLeaderId ? " ⭐" : "");
-
-                totalRow.appendChild(total);
-            }
-
-            totalSection.appendChild(label);
-            totalSection.appendChild(totalRow);
-
-            scorecardElement.appendChild(totalSection);
-        }
-
-        function renderGameStatus() {
-            if (game.status === "paused") {
-                gameStatusElement.textContent =
-                    "game paused";
-
-                return;
-            }
-
-            if (game.status === "finished") {
-                gameStatusElement.textContent =
-                    "finished game";
-
-                return;
-            }
-
-            gameStatusElement.textContent =
-                "current game";
-        }
-
-
-        /* ==================================================
-        SCORE ENTRY
-        ================================================== */
-
-        function handleScoreInput(event) {
-
-            const input = event.target;
-
-            const handIndex =
-                Number(input.dataset.handIndex);
-
-            const playerIndex =
-                Number(input.dataset.playerIndex);
-
-            const playerId =
-                input.dataset.playerId;
-
-            let value = input.value;
-
-            if (value === "") {
-
-                delete game.hands[
-                    handIndex
-                ].scores[playerId];
-
-            } else {
-
-                game.hands[
-                    handIndex
-                ].scores[playerId] = Number(value);
-
-            }
-
-            updateTotalsOnly();
-
-            const currentHand = game.hands[handIndex];
-
-            // Only react once the hand is complete
-            if (!isHandComplete(currentHand)) {
-                return;
-            }
-
-            window.clearTimeout(newRowTimer);
-
-            newRowTimer = window.setTimeout(() => {
-
-                // Make sure the hand is still complete.
-                if (!isHandComplete(game.hands[handIndex])) {
-                    return;
-                }
-
-                // If someone has won, just update the UI.
-                if (determineWinner()) {
-                    renderGame();
-                    return;
-                }
-
-                // Only add a new row if this is still the last hand.
-                if (handIndex === game.hands.length - 1) {
-
-                    game.hands.push(createEmptyHand());
-
-                    renderGame();
-
-                    focusScoreCell(
-                        game.hands.length - 1,
-                        0
-                    );
-
-                }
-
-            }, 1500);
-
-        }
-
-
-        function handleScoreKeyDown(event) {
-            if (event.key !== "Enter") {
-                return;
-            }
-
-            event.preventDefault();
-
-            const input = event.target;
-
-            const handIndex =
-                Number(input.dataset.handIndex);
-
-            const playerIndex =
-                Number(input.dataset.playerIndex);
-
-            moveToNextScoreCell(
-                handIndex,
-                playerIndex
-            );
-        }
-
-
-        function moveToNextScoreCell(
-            handIndex,
-            playerIndex
-        ) {
-
-            const isLastPlayer =
-                playerIndex ===
-                game.players.length - 1;
-
-            if (!isLastPlayer) {
-                focusScoreCell(
-                    handIndex,
-                    playerIndex + 1
-                );
-
-                return;
-            }
-
-            const currentHand =
-                game.hands[handIndex];
-
-            if (isHandComplete(currentHand)) {
-
-                const wasLastHand =
-                    handIndex ===
-                    game.hands.length - 1;
-
-                if (wasLastHand) {
-                    game.hands.push(
-                        createEmptyHand()
-                    );
-
-                    renderGame();
-                }
-
-                focusScoreCell(
-                    handIndex + 1,
-                    0
-                );
-
-                return;
-            }
-
-            focusFirstEmptyCell(
-                handIndex
-            );
-        }
-
-
-        function focusScoreCell(
-            handIndex,
-            playerIndex
-        ) {
-
-            requestAnimationFrame(() => {
-
-                const selector =
-                    `.score-cell[data-hand-index="${handIndex}"]` +
-                    `[data-player-index="${playerIndex}"]`;
-
-                const input =
-                    document.querySelector(selector);
-
-                if (input) {
-                    input.focus();
-                    input.select();
-                }
-
-            });
-        }
-
-
-        function focusFirstEmptyCell(handIndex) {
-            const hand =
-                game.hands[handIndex];
-
-            for (
-                let playerIndex = 0;
-                playerIndex < game.players.length; playerIndex++) {
-                const player = game.players[playerIndex]; const
-                    value = hand.scores[player.id]; if (value === undefined || value === "") {
-                        focusScoreCell(handIndex, playerIndex);
-                        return;
-                    }
-            }
-        } /*==================================================LIVE TOTAL UPDATE Avoids rebuilding the entire
-        scorecard while someone is typing.==================================================*/ function
-            updateTotalsOnly() {
-            const totals = getTotals(); const cells = document.querySelectorAll(".total-cell");
-            game.players.forEach((player, index) => {
-
-                if (cells[index]) {
-                    cells[index].textContent =
-                        totals[player.id];
-                }
-
-            }
-            );
-        }
-
-
-        /* ==================================================
-        PLAYER MANAGEMENT
-        ================================================== */
-
-        function addPlayer() {
-            if (
-                game.players.length >=
-                APP_CONFIG.maxPlayers
-            ) {
-                showMessage(
-                    "Maximum of 4 players."
-                );
-
-                return;
-            }
-
-            const defaultName =
-                `Player ${game.players.length + 1}`;
-
-            const name = window.prompt(
-                "Player name:",
-                defaultName
-            );
-
-            if (!name || !name.trim()) {
-                return;
-            }
-
-            const player = {
-                id: createId(),
-                name: name.trim()
-            };
-
-            game.players.push(player);
-
-            ensureBlankHandExists();
-
-            renderGame();
-
-            showMessage(
-                `${player.name} added.`
-            );
-        }
-
-
-        function removePlayer() {
-            if (
-                game.players.length <= APP_CONFIG.minPlayers) { showMessage("A game needs at least 2 players."); return; }
-            const playerNames = game.players.map((player, index) =>
-                `${index + 1}. ${player.name}`
-            )
-                .join("\n");
-
-            const response = window.prompt(
-                `Enter player number to remove:\n\n${playerNames}`
-            );
-
-            if (!response) {
-                return;
-            }
-
-            const playerIndex =
-                Number(response) - 1;
-
-            if (
-                playerIndex < 0 || playerIndex >= game.players.length
-            ) {
-                showMessage(
-                    "That player number is not valid."
-                );
-
-                return;
-            }
-
-            const removed =
-                game.players[playerIndex];
-
-            const confirmed =
-                window.confirm(
-                    `Remove ${removed.name} from this game?`
-                );
-
-            if (!confirmed) {
-                return;
-            }
-
-            game.players.splice(
-                playerIndex,
-                1
-            );
-
-            for (const hand of game.hands) {
-                delete hand.scores[
-                    removed.id
-                ];
-            }
-
-            renderGame();
-
-            showMessage(
-                `${removed.name} removed.`
-            );
-        }
-
-
-        function renamePlayer(playerId) {
-            const player =
-                game.players.find(
-                    player =>
-                        player.id === playerId
-                );
-
-            if (!player) {
-                return;
-            }
-
-            const name = window.prompt(
-                "Player name:",
-                player.name
-            );
-
-            if (!name || !name.trim()) {
-                return;
-            }
-
-            player.name =
-                name.trim();
-
-            renderGame();
-        }
-
-
-        /* ==================================================
-        GAME ACTIONS
-        ================================================== */
-
-        async function saveProgress() {
-            game.status = "active";
-
-            game =
-                await gameRepository.save(game);
-
-            renderGameStatus();
-
-            showMessage(
-                "Game saved."
-            );
-        }
-
-
-        async function pauseGame() {
-            game.status = "paused";
-
-            game =
-                await gameRepository.save(game);
-
-            renderGameStatus();
-
-            showMessage(
-                "Game paused and saved."
-            );
-        }
-
-
-        async function finishGame() {
-            const completedHands =
-                game.hands.filter(
-                    hand => isHandComplete(hand)
-                );
-
-            if (completedHands.length === 0) {
-                showMessage(
-                    "Enter at least one complete hand first."
-                );
-
-                return;
-            }
-
-            const winner = determineWinner();
-
-            if (!winner) {
-                showMessage(
-                    `No player has reached ${game.winningScore} points yet.`
-                );
-                return;
-            }
-
-            const confirmed =
-                window.confirm(
-                    `${winner ? winner.name : "Nobody"} currently has the highest qualifying score.`
-                );
-
-            if (!confirmed) {
-                return;
-            }
-
-            /*
-            Remove the unused blank row before
-            permanently saving the finished game.
-            */
-
-            game.hands =
-                game.hands.filter(
-                    hand => isHandComplete(hand)
-                );
-
-            game.status =
-                "finished";
-
-            game.finishedAt =
-                new Date().toISOString();
-
-            game.winnerId =
-                winner.id;
-
-            await gameRepository.archive(game);
-
-            await gameRepository.deleteCurrentGame();
-
-            renderGame();
-
-            showMessage(
-                `${winner.name} wins!`
-            );
-        }
-
-
-        async function deleteGame() {
-            const confirmed =
-                window.confirm(
-                    "Delete this game? This cannot be undone."
-                );
-
-            if (!confirmed) {
-                return;
-            }
-
-            await gameRepository.deleteCurrentGame();
-
-            game = createNewGame();
-
-            renderGame();
-
-            focusFirstScore();
-
-            showMessage(
-                "Game deleted."
-            );
-        }
-
-
-        function openSettings() {
-            const value =
-                window.prompt(
-                    "Winning score:",
-                    game.winningScore
-                );
-
-            if (!value) {
-                return;
-            }
-
-            const score =
-                Number(value);
-
-            if (
-                !Number.isFinite(score) ||
-                score <= 0) { showMessage("Enter a valid winning score."); return; } game.winningScore = score;
-            showMessage(`Winning score set to ${score}.`);
-        }
-        /*==================================================MENU==================================================*/
-        function toggleMenu() {
-            const isHidden = gameMenu.classList.contains("hidden");
-            gameMenu.classList.toggle("hidden"); menuButton.setAttribute("aria-expanded", String(isHidden)
-            );
-        } function closeMenu() {
-            gameMenu.classList.add("hidden");
-            menuButton.setAttribute("aria-expanded", "false");
-        } async function handleMenuAction(event) {
-            const button = event.target.closest("[data-action]"); if (!button) { return; } const
-                action = button.dataset.action; closeMenu(); switch (action) {
-                    case "save": await saveProgress();
-                        break; case "pause": await pauseGame(); break; case "finish": await finishGame(); break;
-                    case "add-player": addPlayer(); break; case "remove-player": removePlayer(); break;
-                    case "settings": openSettings(); break; case "delete": await deleteGame(); break;
-                }
-        }
-        /*==================================================HELPERS==================================================*/
-        function focusFirstScore() { focusScoreCell(0, 0); } function showMessage(message) {
-            messageElement.textContent = message; window.clearTimeout(showMessage.timeout);
-            showMessage.timeout = window.setTimeout(() => {
-                messageElement.textContent =
-                    "";
-            }, 2500);
-        }
-
-
-        /* ==================================================
-        INITIALIZATION
-        ================================================== */
-
-        async function initializeApp() {
-
-            const savedGame =
-                await gameRepository.loadCurrentGame();
-
-            if (
-                savedGame &&
-                savedGame.status !== "finished"
-            ) {
-                game = savedGame;
-
-                ensureBlankHandExists();
-            } else {
-                game = createNewGame();
-            }
-
-            renderGame();
-
-            focusFirstScore();
-        }
-
-
-        /* ==================================================
-        EVENTS
-        ================================================== */
-
-        menuButton.addEventListener(
-            "click",
-            event => {
-                event.stopPropagation();
-                toggleMenu();
-            }
-        );
-
-
-        gameMenu.addEventListener(
-            "click",
-            handleMenuAction
-        );
-
-
-        document.addEventListener(
-            "click",
-            event => {
-
-                if (
-                    !gameMenu.contains(event.target) &&
-                    event.target !== menuButton
-                ) {
-                    closeMenu();
-                }
-
-            }
-        );
-
-
-        /* ==================================================
-        START APP
-        ================================================== */
-
-        initializeApp();
-
+        const APP_CONFIG = { minPlayers: 2, maxPlayers: 4, defaultWinningScore: 500, initialVisibleHands: 6 };
+        function createId() { return typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).slice(2) }
+        function createEmptyHand() { return { id: createId(), scores: {} } }
+        function createNewGame() { const now = new Date().toISOString(); return { id: createId(), status: "active", createdAt: now, updatedAt: now, finishedAt: null, winningScore: APP_CONFIG.defaultWinningScore, players: [{ id: createId(), name: "Player 1" }, { id: createId(), name: "Player 2" }], hands: Array.from({ length: APP_CONFIG.initialVisibleHands }, createEmptyHand), winnerId: null, currentLeaderId: null } }
+        const gameRepository = { async save(g) { const x = { ...g, updatedAt: new Date().toISOString() }; localStorage.setItem("ginRummyCurrentGame", JSON.stringify(x)); return x }, async loadCurrentGame() { try { return JSON.parse(localStorage.getItem("ginRummyCurrentGame")) } catch { return null } }, async loadFinishedGames() { try { return JSON.parse(localStorage.getItem("ginRummyFinishedGames") || "[]") } catch { return [] } }, async archive(g) { const a = await this.loadFinishedGames(); a.push(g); localStorage.setItem("ginRummyFinishedGames", JSON.stringify(a)) }, async deleteCurrentGame() { localStorage.removeItem("ginRummyCurrentGame") } };
+        let game = null, newRowTimer = null, currentPage = "home";
+        const $ = id => document.getElementById(id); const scorecardElement = $("scorecard"), menuButton = $("menuButton"), gameMenu = $("gameMenu"), gameStatusElement = $("gameStatus"), messageElement = $("message");
+        function getPlayerTotal(playerId) { return game.hands.reduce((t, h) => { const v = h.scores[playerId]; return v === undefined || v === null || v === "" ? t : t + Number(v) }, 0) }
+        function getTotals() { return Object.fromEntries(game.players.map(p => [p.id, getPlayerTotal(p.id)])) }
+        function isHandComplete(hand) { return game.players.every(p => hand.scores[p.id] !== undefined && hand.scores[p.id] !== null && hand.scores[p.id] !== "") }
+        function completedHands() { return game.hands.filter(isHandComplete) }
+        function determineLeader() { const totals = getTotals(); let leader = null, high = -Infinity; for (const p of game.players) { if (totals[p.id] > high) { high = totals[p.id]; leader = p } } game.currentLeaderId = leader?.id || null; return leader }
+        function determineWinner() { const leader = determineLeader(); return leader && getPlayerTotal(leader.id) >= game.winningScore ? leader : null }
+        function ensureMinimumHands() { while (game.hands.length < APP_CONFIG.initialVisibleHands) game.hands.push(createEmptyHand()) }
+        function renderGame() { ensureMinimumHands(); scorecardElement.innerHTML = ""; scorecardElement.style.setProperty("--player-count", game.players.length); renderPlayerHeaders(); const scroll = document.createElement("div"); scroll.className = "score-scroll-area"; renderHands(scroll); scorecardElement.appendChild(scroll); renderTotals(); renderGameStatus(); renderScoreFooter() }
+        function renderPlayerHeaders() { const leader = determineLeader(), header = document.createElement("div"); header.className = "player-grid"; const r = document.createElement("div"); r.className = "round-head"; r.textContent = "#"; header.appendChild(r); for (const p of game.players) { const el = document.createElement("div"); el.className = "player-header" + (p.id === leader?.id ? " leader" : ""); el.textContent = p.name.toUpperCase(); el.title = "Click to rename"; el.onclick = () => renamePlayer(p.id); header.appendChild(el) } scorecardElement.appendChild(header) }
+        function renderHands(container) { const leader = determineLeader(); game.hands.forEach((hand, handIndex) => { const row = document.createElement("div"); row.className = "hand-row"; const num = document.createElement("div"); num.className = "round-number"; num.textContent = handIndex + 1; row.appendChild(num); game.players.forEach((p, playerIndex) => { const input = document.createElement("input"); input.className = "score-cell" + (p.id === leader?.id ? " leader" : ""); input.type = "number"; input.inputMode = "numeric"; input.autocomplete = "off"; input.placeholder = "—"; input.dataset.handIndex = handIndex; input.dataset.playerIndex = playerIndex; input.dataset.playerId = p.id; const s = hand.scores[p.id]; input.value = s === undefined ? "" : s; input.addEventListener("input", handleScoreInput); input.addEventListener("keydown", handleScoreKeyDown); row.appendChild(input) }); container.appendChild(row) }) }
+        function renderTotals() { const leader = determineLeader(), totals = getTotals(), section = document.createElement("div"); section.className = "total-section"; section.innerHTML = '<div class="total-label">total</div>'; const row = document.createElement("div"); row.className = "total-row"; const spacer = document.createElement("div"); spacer.className = "total-spacer"; spacer.textContent = "Σ"; row.appendChild(spacer); for (const p of game.players) { const el = document.createElement("div"); el.className = "total-cell" + (p.id === leader?.id ? " leader" : ""); el.textContent = totals[p.id]; row.appendChild(el) } section.appendChild(row); scorecardElement.appendChild(section) }
+        function renderGameStatus() { gameStatusElement.textContent = game.status === "paused" ? "game paused" : game.status === "finished" ? "finished game" : "current game" }
+        async function getAllTimeHighHand() { const finished = await gameRepository.loadFinishedGames(); let best = { score: null, name: "" }; for (const g of finished) { for (const h of g.hands) { for (const p of g.players) { const v = h.scores[p.id]; if (v !== undefined && v !== "" && (best.score === null || Number(v) > best.score)) best = { score: Number(v), name: p.name } } } } for (const h of completedHands()) { for (const p of game.players) { const v = h.scores[p.id]; if (v !== undefined && v !== "" && (best.score === null || Number(v) > best.score)) best = { score: Number(v), name: p.name } } } return best }
+        async function renderScoreFooter() { const leader = determineLeader(); $("currentLeader").textContent = leader ? leader.name : "—"; const best = await getAllTimeHighHand(); $("highHand").textContent = best.score === null ? "—" : `${best.score} by ${best.name}` }
+        function handleScoreInput(e) { const input = e.target, handIndex = Number(input.dataset.handIndex), playerId = input.dataset.playerId, value = input.value; if (value === "") delete game.hands[handIndex].scores[playerId]; else game.hands[handIndex].scores[playerId] = Number(value); updateTotalsOnly(); renderScoreFooter(); if (!isHandComplete(game.hands[handIndex])) return; clearTimeout(newRowTimer); newRowTimer = setTimeout(() => { if (!isHandComplete(game.hands[handIndex])) return; if (determineWinner()) { renderGame(); return } if (handIndex === game.hands.length - 1) { game.hands.push(createEmptyHand()); renderGame(); focusScoreCell(game.hands.length - 1, 0) } }, 2000) }
+        function handleScoreKeyDown(e) { if (e.key !== "Enter") return; e.preventDefault(); moveToNextScoreCell(Number(e.target.dataset.handIndex), Number(e.target.dataset.playerIndex)) }
+        function moveToNextScoreCell(handIndex, playerIndex) { if (playerIndex < game.players.length - 1) { focusScoreCell(handIndex, playerIndex + 1); return } const hand = game.hands[handIndex]; if (isHandComplete(hand)) { if (handIndex === game.hands.length - 1 && !determineWinner()) { game.hands.push(createEmptyHand()); renderGame() } focusScoreCell(Math.min(handIndex + 1, game.hands.length - 1), 0); return } focusFirstEmptyCell(handIndex) }
+        function focusScoreCell(h, p) { requestAnimationFrame(() => { const el = document.querySelector(`.score-cell[data-hand-index="${h}"][data-player-index="${p}"]`); if (el) { el.focus(); el.select() } }) }
+        function focusFirstEmptyCell(h) { const hand = game.hands[h]; for (let i = 0; i < game.players.length; i++) { const v = hand.scores[game.players[i].id]; if (v === undefined || v === "") { focusScoreCell(h, i); return } } }
+        function updateTotalsOnly() { const totals = getTotals(), cells = document.querySelectorAll(".total-cell"); game.players.forEach((p, i) => { if (cells[i]) cells[i].textContent = totals[p.id] }) }
+        function addPlayer() { if (game.players.length >= APP_CONFIG.maxPlayers) return showMessage("Maximum of 4 players."); const name = prompt("Player name:", `Player ${game.players.length + 1}`); if (!name?.trim()) return; game.players.push({ id: createId(), name: name.trim() }); renderGame(); showMessage(`${name.trim()} added.`) }
+        function removePlayer() { if (game.players.length <= APP_CONFIG.minPlayers) return showMessage("A game needs at least 2 players."); const names = game.players.map((p, i) => `${i + 1}. ${p.name}`).join("\n"), response = prompt(`Enter player number to remove:\n\n${names}`); if (!response) return; const i = Number(response) - 1; if (i < 0 || i >= game.players.length) return showMessage("That player number is not valid."); const removed = game.players[i]; if (!confirm(`Remove ${removed.name} from this game?`)) return; game.players.splice(i, 1); for (const h of game.hands) delete h.scores[removed.id]; renderGame() }
+        function renamePlayer(id) { const p = game.players.find(x => x.id === id); if (!p) return; const name = prompt("Player name:", p.name); if (!name?.trim()) return; p.name = name.trim(); renderGame() }
+        async function saveProgress() { game.status = "active"; game = await gameRepository.save(game); renderGameStatus(); renderHome(); showMessage("Game saved.") }
+        async function pauseGame() { game.status = "paused"; game = await gameRepository.save(game); renderGameStatus(); renderHome(); showMessage("Game paused and saved.") }
+        async function finishGame() { if (completedHands().length === 0) return showMessage("Enter at least one complete hand first."); const winner = determineWinner(); if (!winner) return showMessage(`No player has reached ${game.winningScore} points yet.`); if (!confirm(`${winner.name} wins with ${getPlayerTotal(winner.id)} points. End this game?`)) return; game.hands = completedHands(); game.status = "finished"; game.finishedAt = new Date().toISOString(); game.winnerId = winner.id; await gameRepository.archive(game); await gameRepository.deleteCurrentGame(); showMessage(`${winner.name} wins!`); game = createNewGame(); await renderAll(); showPage("home") }
+        async function deleteGame() { if (!confirm("Delete this game? This cannot be undone.")) return; await gameRepository.deleteCurrentGame(); game = createNewGame(); await renderAll(); showPage("home") }
+        function openSettings() { const value = prompt("Winning score:", game.winningScore); if (!value) return; const score = Number(value); if (!Number.isFinite(score) || score <= 0) return showMessage("Enter a valid winning score."); game.winningScore = score; showMessage(`Winning score set to ${score}.`) }
+        function toggleMenu() { gameMenu.classList.toggle("hidden") } function closeMenu() { gameMenu.classList.add("hidden") }
+        async function handleMenuAction(e) { const b = e.target.closest("[data-action]"); if (!b) return; closeMenu(); const a = b.dataset.action; if (a === "save") await saveProgress(); else if (a === "pause") await pauseGame(); else if (a === "finish") await finishGame(); else if (a === "add-player") addPlayer(); else if (a === "remove-player") removePlayer(); else if (a === "settings") openSettings(); else if (a === "delete") await deleteGame() }
+        function showMessage(m) { messageElement.textContent = m; clearTimeout(showMessage.timeout); showMessage.timeout = setTimeout(() => messageElement.textContent = "", 2500) }
+        async function startNewGame() { if (completedHands().length && !confirm("Start a new game? Your current game will be replaced.")) return; game = createNewGame(); await gameRepository.save(game); await renderAll(); showPage("score"); focusScoreCell(0, 0) }
+        function showPage(page) { currentPage = page; document.querySelectorAll(".page").forEach(x => x.classList.remove("active")); $(`${page}Page`).classList.add("active"); document.querySelectorAll(".nav-btn").forEach(x => x.classList.toggle("active", x.dataset.page === page)); if (page === "score") renderGame(); if (page === "home") renderHome(); if (page === "stats") renderStats(); if (page === "games") renderGames(); window.scrollTo(0, 0) }
+        async function renderHome() { const totals = getTotals(), leader = determineLeader(), hasProgress = completedHands().length > 0; $("homeCurrentGame").innerHTML = `<div class="current-card"><div class="current-card-head"><span>CURRENT GAME</span><span>${hasProgress ? "in progress" : "new game"}</span></div>${game.players.map(p => `<div class="home-player-row ${p.id === leader?.id && hasProgress ? "leader" : ""}"><span>${p.name}</span><span>${totals[p.id]}</span></div>`).join("")}<button class="continue-btn" id="continueGame">☷ &nbsp; ${hasProgress ? "continue current game" : "open scorecard"} <span style="float:right">→</span></button></div>`; $("continueGame").onclick = () => showPage("score"); const games = (await gameRepository.loadFinishedGames()).slice().reverse().slice(0, 4); $("recentGames").innerHTML = games.length ? games.map(g => { const w = g.players.find(p => p.id === g.winnerId); return `<div class="recent-row"><span>${formatDate(g.finishedAt)}</span><span class="winner"><span class="crown">♛</span> ${w?.name || "—"} won</span></div>` }).join("") : '<div class="empty-state">No finished games yet.</div>' }
+        async function buildStats() { const games = await gameRepository.loadFinishedGames(), map = new Map(); let high = { score: null, name: "" }; for (const g of games) { const totals = {}; for (const p of g.players) { totals[p.id] = g.hands.reduce((t, h) => t + Number(h.scores[p.id] || 0), 0); if (!map.has(p.name)) map.set(p.name, { name: p.name, games: 0, wins: 0, points: 0 }); const s = map.get(p.name); s.games++; s.points += totals[p.id]; if (p.id === g.winnerId) s.wins++; for (const h of g.hands) { const v = h.scores[p.id]; if (v !== undefined && (high.score === null || Number(v) > high.score)) high = { score: Number(v), name: p.name } } } } return { games, players: [...map.values()].sort((a, b) => b.wins - a.wins), high } }
+        async function renderStats() { const s = await buildStats(), top = s.players[0], low = s.players.length ? [...s.players].sort((a, b) => (a.points / a.games) - (b.points / b.games))[0] : null; $("statsOverview").innerHTML = `<div class="stats-grid"><div class="card metric"><label>TOTAL GAMES</label><strong>${s.games.length}</strong><small>played</small></div><div class="card metric"><label>TOP PLAYER</label><strong class="red">${top?.name || "—"}</strong><small>${top ? `${top.wins} wins` : "no games yet"}</small></div><div class="card metric"><label>LOWEST AVG</label><strong>${low ? Math.round(low.points / low.games) : "—"}</strong><small>${low ? `by ${low.name}` : "—"}</small></div><div class="card metric"><label>HIGHEST HAND</label><strong class="red">${s.high.score ?? "—"}</strong><small>${s.high.name ? `by ${s.high.name}` : "—"}</small></div></div><div class="card player-summary"><div class="section-title" style="margin-bottom:8px">player summary</div><table class="summary-table"><thead><tr><th>player</th><th>games</th><th>wins</th><th>win %</th><th>total pts</th><th>avg/game</th></tr></thead><tbody>${s.players.length ? s.players.map(p => `<tr><td>${p.name}</td><td>${p.games}</td><td>${p.wins}</td><td>${Math.round(p.wins / p.games * 100)}%</td><td>${p.points}</td><td>${(p.points / p.games).toFixed(1)}</td></tr>`).join("") : '<tr><td colspan="6">No finished games yet.</td></tr>'}</tbody></table></div><div class="card record"><span>♜ &nbsp; all time high hand</span><span><strong>${s.high.score ?? "—"}</strong>${s.high.name ? ` &nbsp;by ${s.high.name}` : ""}</span></div>` }
+        async function renderGames() { const games = (await gameRepository.loadFinishedGames()).slice().reverse(); $("gamesList").innerHTML = games.length ? games.map(g => { const w = g.players.find(p => p.id === g.winnerId); return `<div class="game-history-row"><div><strong>${w?.name || "—"} won</strong><div class="muted" style="font-size:12px;margin-top:4px">${g.players.map(p => p.name).join(" · ")}</div></div><span class="muted" style="font-size:12px">${formatDate(g.finishedAt)}</span></div>` }).join("") : '<div class="empty-state">No finished games yet.</div>' }
+        function formatDate(v) { if (!v) return "—"; return new Date(v).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" }) }
+        async function renderAll() { renderGame(); await renderHome(); await renderStats(); await renderGames() }
+        async function initializeApp() { const saved = await gameRepository.loadCurrentGame(); game = saved && saved.status !== "finished" ? saved : createNewGame(); ensureMinimumHands(); await renderAll(); showPage("home") }
+        menuButton.addEventListener("click", e => { e.stopPropagation(); toggleMenu() }); gameMenu.addEventListener("click", handleMenuAction); document.addEventListener("click", e => { if (!gameMenu.contains(e.target) && e.target !== menuButton) closeMenu() }); $("newGameButton").onclick = startNewGame; $("finishButton").onclick = finishGame; document.querySelectorAll("[data-page]").forEach(b => b.addEventListener("click", () => showPage(b.dataset.page))); initializeApp();
     </script>
 </body>
 
