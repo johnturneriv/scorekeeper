@@ -1265,7 +1265,28 @@
         const DEFAULT_SAVED_PLAYERS = [];
         function createId() { return typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).slice(2) }
         function createEmptyHand() { return { id: createId(), scores: {} } }
-        function createNewGame() { const now = new Date().toISOString(); return { id: createId(), status: "active", createdAt: now, updatedAt: now, lastSavedAt: null, finishedAt: null, winningScore: APP_CONFIG.defaultWinningScore, players: [{ id: createId(), name: "Player 1" }, { id: createId(), name: "Player 2" }], hands: Array.from({ length: APP_CONFIG.initialVisibleHands }, createEmptyHand), winnerId: null, currentLeaderId: null } }
+        function createNewGame() {
+            const now = new Date().toISOString();
+            const players = [
+                { id: createId(), name: "Player 1" },
+                { id: createId(), name: "Player 2" }
+            ];
+
+            return {
+                id: createId(),
+                status: "active",
+                createdAt: now,
+                updatedAt: now,
+                lastSavedAt: null,
+                finishedAt: null,
+                winningScore: APP_CONFIG.defaultWinningScore,
+                players,
+                hands: Array.from({ length: APP_CONFIG.initialVisibleHands }, createEmptyHand),
+                winnerId: null,
+                currentLeaderId: null,
+                dealerId: players[0].id
+            };
+        }
         /* DATA ACCESS BOUNDARY
            All game persistence goes through this repository.
            To make the app multi-user later, replace this localStorage adapter
@@ -1322,9 +1343,13 @@
         function determineLeader() { const totals = getTotals(); let leader = null, high = -Infinity; for (const p of game.players) { if (totals[p.id] > high) { high = totals[p.id]; leader = p } } game.currentLeaderId = leader?.id || null; return leader }
         function determineWinner() { const activeHands = game.hands.filter(h => Object.keys(h.scores).some(id => h.scores[id] !== undefined && h.scores[id] !== null && h.scores[id] !== "")); if (!activeHands.length || !isHandComplete(activeHands[activeHands.length - 1])) return null; const leader = determineLeader(); return leader && getPlayerTotal(leader.id) >= game.winningScore ? leader : null }
         function ensureMinimumHands() { while (game.hands.length < APP_CONFIG.initialVisibleHands) game.hands.push(createEmptyHand()) }
-
         function renderGame() {
             ensureMinimumHands();
+
+            if (!game.dealerId || !game.players.some(p => p.id === game.dealerId)) {
+                game.dealerId = game.players[0]?.id || null;
+            }
+
             scorecardElement.innerHTML = "";
             scorecardElement.style.setProperty("--player-count", game.players.length);
             scorecardElement.className = "scorecard-inner" + (game.players.length > 5 ? " wide" : "");
@@ -1343,16 +1368,41 @@
         }
 
         function renderPlayerHeaders() {
-            const winner = determineWinner(), leader = getDisplayedLeader(), header = document.createElement("div"); header.className = "player-grid";
-            const r = document.createElement("div"); r.className = "round-head"; r.textContent = "#"; header.appendChild(r);
+            const winner = determineWinner();
+            const header = document.createElement("div");
+            header.className = "player-grid";
+
+            const r = document.createElement("div");
+            r.className = "round-head";
+            r.textContent = "#";
+            header.appendChild(r);
+
             for (const p of game.players) {
-                const el = document.createElement("div"); el.className = "player-header" + (p.id === winner?.id ? " winner" : ""); el.title = "Tap to choose a saved player or edit this name";
-                const wrap = document.createElement("div"); wrap.className = "player-name-wrap";
-                const name = document.createElement("span"); name.className = "player-name-text"; name.textContent = p.name.toUpperCase(); wrap.appendChild(name);
-                if (p.id === leader?.id) { const icon = document.createElement("span"); icon.className = "leader-icon"; icon.textContent = getLeaderIcon(); wrap.appendChild(icon) }
-                el.appendChild(wrap); el.onclick = () => openPlayerPicker(p.id); header.appendChild(el)
+                const el = document.createElement("div");
+                el.className = "player-header" + (p.id === winner?.id ? " winner" : "");
+                el.title = "Tap to choose a saved player or edit this name";
+
+                const wrap = document.createElement("div");
+                wrap.className = "player-name-wrap";
+
+                const name = document.createElement("span");
+                name.className = "player-name-text";
+                name.textContent = p.name.toUpperCase();
+                wrap.appendChild(name);
+
+                if (p.id === game.dealerId) {
+                    const icon = document.createElement("span");
+                    icon.className = "leader-icon";
+                    icon.textContent = getLeaderIcon();
+                    wrap.appendChild(icon);
+                }
+
+                el.appendChild(wrap);
+                el.onclick = () => openPlayerPicker(p.id);
+                header.appendChild(el);
             }
-            scorecardElement.appendChild(header)
+
+            scorecardElement.appendChild(header);
         }
 
         function fitPlayerNames() {
@@ -1406,12 +1456,47 @@
         function renderGameStatus() { gameStatusElement.textContent = "scorecard" }
 
         function handleScoreInput(e) {
-            const input = e.target, handIndex = Number(input.dataset.handIndex), playerId = input.dataset.playerId, value = input.value;
-            if (value === "") delete game.hands[handIndex].scores[playerId]; else game.hands[handIndex].scores[playerId] = Number(value);
-            updateTotalsOnly(); updateLeaderAce();
-            if (!isHandComplete(game.hands[handIndex])) return;
+            const input = e.target;
+            const handIndex = Number(input.dataset.handIndex);
+            const playerId = input.dataset.playerId;
+            const value = input.value;
+
+            if (value === "") {
+                delete game.hands[handIndex].scores[playerId];
+            } else {
+                game.hands[handIndex].scores[playerId] = Number(value);
+            }
+
+            updateTotalsOnly();
+
             clearTimeout(newRowTimer);
-            newRowTimer = setTimeout(() => { if (!isHandComplete(game.hands[handIndex])) return; if (determineWinner()) { renderGame(); return } if (handIndex === game.hands.length - 1) { game.hands.push(createEmptyHand()); renderGame(); focusScoreCell(game.hands.length - 1, 0) } }, 2000)
+
+            if (!isHandComplete(game.hands[handIndex])) return;
+
+            newRowTimer = setTimeout(() => {
+                if (!isHandComplete(game.hands[handIndex])) return;
+
+                const currentDealerIndex = Math.max(
+                    0,
+                    game.players.findIndex(p => p.id === game.dealerId)
+                );
+
+                const nextDealerIndex = (currentDealerIndex + 1) % game.players.length;
+                game.dealerId = game.players[nextDealerIndex].id;
+
+                if (determineWinner()) {
+                    renderGame();
+                    return;
+                }
+
+                if (handIndex === game.hands.length - 1) {
+                    game.hands.push(createEmptyHand());
+                    renderGame();
+                    focusScoreCell(game.hands.length - 1, 0);
+                } else {
+                    renderGame();
+                }
+            }, 1500);
         }
         function handleScoreKeyDown(e) { if (e.key !== "Enter") return; e.preventDefault(); moveToNextScoreCell(Number(e.target.dataset.handIndex), Number(e.target.dataset.playerIndex)) }
         function moveToNextScoreCell(handIndex, playerIndex) { if (playerIndex < game.players.length - 1) { focusScoreCell(handIndex, playerIndex + 1); return } const hand = game.hands[handIndex]; if (isHandComplete(hand)) { if (handIndex === game.hands.length - 1 && !determineWinner()) { clearTimeout(newRowTimer); newRowTimer = setTimeout(() => { if (handIndex === game.hands.length - 1 && !determineWinner()) { game.hands.push(createEmptyHand()); renderGame(); focusScoreCell(game.hands.length - 1, 0) } }, 2000); return } focusScoreCell(Math.min(handIndex + 1, game.hands.length - 1), 0); return } focusFirstEmptyCell(handIndex) }
@@ -1422,15 +1507,7 @@
             game.players.forEach((p, i) => { if (!cells[i]) return; cells[i].classList.toggle("winner", p.id === winner?.id); cells[i].textContent = String(totals[p.id]) })
         }
 
-        function updateLeaderAce() {
-            const leader = getDisplayedLeader();
-            document.querySelectorAll(".player-header").forEach((header, i) => {
-                header.querySelector(".leader-icon")?.remove();
-                header.querySelector(".leader-ace")?.remove();
-                if (game.players[i]?.id === leader?.id) { const icon = document.createElement("span"); icon.className = "leader-icon"; icon.textContent = getLeaderIcon(); header.querySelector(".player-name-wrap")?.appendChild(icon) }
-            });
-            requestAnimationFrame(fitPlayerNames)
-        }
+
 
         function addPlayer() { if (game.players.length >= APP_CONFIG.maxPlayers) return showMessage(`Maximum of ${APP_CONFIG.maxPlayers} players.`); game.players.push({ id: createId(), name: `Player ${game.players.length + 1}` }); for (const h of game.hands) delete h.scores[game.players[game.players.length - 1].id]; renderGame(); openPlayerPicker(game.players[game.players.length - 1].id); showMessage("Player column added.") }
         function removePlayer() { if (game.players.length <= APP_CONFIG.minPlayers) return showMessage("A game needs at least 2 players."); const names = game.players.map((p, i) => `${i + 1}. ${p.name}`).join("\n"), response = prompt(`Enter player number to remove:\n\n${names}`); if (!response) return; const i = Number(response) - 1; if (i < 0 || i >= game.players.length) return showMessage("That player number is not valid."); const removed = game.players[i]; if (!confirm(`Remove ${removed.name} from this game?`)) return; game.players.splice(i, 1); for (const h of game.hands) delete h.scores[removed.id]; renderGame(); showMessage(`${removed.name} removed.`) }
