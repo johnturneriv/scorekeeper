@@ -211,7 +211,165 @@
 
         /* SCORECARD */
         .page-heading {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
             margin: 5px 2px 14px
+        }
+
+        .wager-display {
+            border: 0;
+            border-radius: 9px;
+            padding: 7px 10px;
+            background: var(--soft);
+            color: var(--navy);
+            font-size: 11px;
+            font-weight: 800;
+            letter-spacing: .04em;
+            white-space: nowrap;
+        }
+
+        .wager-display:not(:disabled) {
+            cursor: pointer;
+        }
+
+        .wager-display.locked {
+            color: var(--muted);
+            opacity: .72;
+            cursor: default;
+        }
+
+        .wager-options {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-bottom: 14px;
+        }
+
+        .wager-type {
+            padding: 12px;
+            border: 1px solid var(--line);
+            border-radius: 9px;
+            background: var(--soft);
+            color: var(--navy);
+            font-weight: 800;
+        }
+
+        .wager-type.active {
+            box-shadow: inset 0 0 0 2px var(--gold);
+        }
+
+        .wager-amount-wrap {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 14px;
+        }
+
+        .wager-dollar {
+            font-size: 22px;
+            font-weight: 800;
+        }
+
+        .wager-amount {
+            width: 100%;
+            min-width: 0;
+            padding: 12px;
+            border: 1px solid var(--line);
+            border-radius: 9px;
+            background: var(--card);
+            color: var(--navy);
+            font-size: 18px;
+            font-weight: 800;
+            outline: none;
+        }
+
+        .wager-save {
+            width: 100%;
+            padding: 12px;
+            border: 0;
+            border-radius: 9px;
+            background: var(--navy);
+            color: var(--card);
+            font-weight: 800;
+        }
+
+        .winner-popup {
+            text-align: center;
+        }
+
+        .winner-title {
+            margin: 4px 0 2px;
+            color: var(--red);
+            font-family: "Cormorant Garamond", serif;
+            font-size: 34px;
+            line-height: 1;
+            font-weight: 700;
+            font-style: italic;
+        }
+
+        .winner-score {
+            margin-bottom: 18px;
+            color: var(--muted);
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .winner-money {
+            margin: 12px 0 18px;
+            padding: 16px;
+            border: 1px solid var(--line);
+            border-radius: 12px;
+            background: var(--soft);
+        }
+
+        .winner-money-label {
+            margin-bottom: 4px;
+            color: var(--muted);
+            font-size: 10px;
+            font-weight: 800;
+            letter-spacing: .08em;
+            text-transform: uppercase;
+        }
+
+        .winner-money-total {
+            color: var(--gold);
+            font-size: 30px;
+            font-weight: 800;
+        }
+
+        .settlement-title {
+            margin: 16px 0 7px;
+            color: var(--muted);
+            font-size: 10px;
+            font-weight: 800;
+            letter-spacing: .08em;
+            text-transform: uppercase;
+        }
+
+        .settlement-row {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 9px 2px;
+            border-top: 1px solid var(--line);
+            font-size: 13px;
+        }
+
+        .settlement-row strong {
+            white-space: nowrap;
+        }
+
+        .winner-done {
+            width: 100%;
+            margin-top: 18px;
+            padding: 13px;
+            border: 0;
+            border-radius: 10px;
+            background: var(--navy);
+            color: var(--card);
+            font-weight: 800;
         }
 
         .eyebrow {
@@ -279,7 +437,8 @@
             align-items: center;
             justify-content: center;
             gap: 4px;
-            min-width: 0
+            min-width: 0;
+            height: 26px;
         }
 
         .player-name-text {
@@ -329,19 +488,41 @@
             font-weight: 700
         }
 
+        .score-cell-wrap {
+            position: relative;
+            min-width: 0;
+            height: 53px;
+            background: #fff;
+        }
+
+        .hand-payout {
+            position: absolute;
+            z-index: 3;
+            top: 4px;
+            right: 5px;
+            pointer-events: none;
+            color: var(--gold);
+            font-size: 11px;
+            line-height: 1;
+            font-weight: 600;
+            opacity: .95;
+        }
+
         .score-cell {
+            display: block;
+            width: 100%;
             min-width: 0;
             height: 53px;
             padding: 0;
             border: 0;
             border-left: 1px solid var(--line);
-            background: #fff;
+            background: transparent;
             color: var(--navy);
             text-align: center;
             outline: none;
             font-size: 16px;
             font-weight: 600;
-            -moz-appearance: textfield
+            -moz-appearance: textfield;
         }
 
         .score-cell::-webkit-inner-spin-button,
@@ -402,6 +583,25 @@
             font-weight: 800;
             cursor: pointer;
             white-space: nowrap
+        }
+
+        .total-cell.leader-circle {
+            position: relative;
+            color: var(--navy);
+            background: inherit;
+        }
+
+        .total-cell.leader-circle::after {
+            content: "";
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            width: 52px;
+            height: 33.6px;
+            transform: translate(-50%, -50%) rotate(-5deg);
+            border: 2.5px solid var(--red);
+            border-radius: 48% 52% 46% 54% / 55% 45% 53% 47%;
+            pointer-events: none;
         }
 
         .total-cell.winner {
@@ -622,42 +822,7 @@
             border-color: #f8f4e6
         }
 
-        body[data-theme="tropical"] {
-            --bg: #fff7ed;
-            --card: rgba(255, 255, 255, .92);
-            --navy: #0a5060;
-            --red: #ef5a67;
-            --gold: #f0b84b;
-            --muted: #5e7f85;
-            --line: rgba(10, 80, 96, .16);
-            --soft: #eefaf8;
-            --shadow: 0 10px 30px rgba(13, 100, 110, .10);
-            background:
-                radial-gradient(circle at 15% 10%, rgba(255, 196, 103, .28), transparent 24%),
-                radial-gradient(circle at 86% 18%, rgba(80, 199, 191, .22), transparent 24%),
-                linear-gradient(180deg, #fff8ef, #f3fffb);
-            color: var(--navy)
-        }
 
-        body[data-theme="tropical"] .brand-name .red,
-        body[data-theme="tropical"] .metric strong.red,
-        body[data-theme="tropical"] .game-menu .danger,
-        body[data-theme="tropical"] .end-game-bottom {
-            color: #ef5a67
-        }
-
-        body[data-theme="tropical"] .bottom-nav {
-            background: rgba(255, 255, 255, .94)
-        }
-
-        body[data-theme="tropical"] .nav-btn.active {
-            color: #0aa3a8
-        }
-
-        body[data-theme="tropical"] .tab.active {
-            background: #0a7d83;
-            color: #fff
-        }
 
         .theme-options {
             display: grid;
@@ -809,111 +974,99 @@
         }
 
         body[data-theme="tropical"] {
-            --bg: #ffe58a;
-            --card: #fffdf5;
-            --navy: #073b4c;
-            --red: #e93f5c;
-            --gold: #ffb000;
-            --muted: #416b72;
-            --line: rgba(7, 59, 76, .20);
-            --soft: #d9fbf4;
-            --shadow: 0 10px 30px rgba(7, 59, 76, .12);
-            background:
-                radial-gradient(circle at 12% 12%, rgba(255, 78, 121, .42), transparent 23%),
-                radial-gradient(circle at 88% 18%, rgba(0, 199, 190, .42), transparent 25%),
-                radial-gradient(circle at 18% 78%, rgba(255, 183, 3, .42), transparent 27%),
-                linear-gradient(145deg, #fff0a8 0%, #bff7e8 52%, #ffb7c9 100%);
+            --bg: #357187;
+            --card: #e4f3f0;
+            --navy: #073f49;
+            --red: #af5550;
+            --gold: #f5d87c;
+            --muted: #5f7f83;
+            --line: rgba(7, 63, 73, .18);
+            --soft: #d9eeeb;
+            --shadow: 0 10px 30px rgba(4, 48, 58, .16);
+            background-color: #357187;
+            background-image: url("tropical-bg.png");
+            background-size: cover;
+            background-position: center top;
+            background-repeat: no-repeat;
             background-attachment: fixed;
-            color: var(--navy)
+            color: #ffffff;
         }
 
         body[data-theme="tropical"] .card,
-        body[data-theme="tropical"] .player-grid,
-        body[data-theme="tropical"] .score-cell,
-        body[data-theme="tropical"] .total-section,
-        body[data-theme="tropical"] .total-row,
-        body[data-theme="tropical"] .total-cell,
         body[data-theme="tropical"] .tabs,
         body[data-theme="tropical"] .game-menu,
         body[data-theme="tropical"] .modal-card,
         body[data-theme="tropical"] .manual-name,
         body[data-theme="tropical"] .theme-choice,
         body[data-theme="tropical"] .player-list-add input {
-            background: #fffdf5;
-            color: #073b4c
+            background: var(--card);
+            color: var(--navy);
         }
 
         body[data-theme="tropical"] .game-menu {
-            border-color: #00a7a0
+            border-color: var(--line);
         }
 
         body[data-theme="tropical"] .game-menu button:hover,
         body[data-theme="tropical"] .player-header:hover {
-            background: #d9fbf4
+            background: var(--soft);
         }
 
         body[data-theme="tropical"] .add-player-bottom {
-            background: #00a7a0;
-            border-color: #007b78;
-            color: #fff
+            background: #129aa0;
+            border-color: #f4c84e;
+            color: #fff7dc;
         }
 
         body[data-theme="tropical"] .end-game-bottom {
-            background: #ef4f70;
-            border-color: #c92f50;
-            color: #fff
+            background: var(--red);
+            border-color: var(--red);
+            color: #fff;
         }
 
         body[data-theme="tropical"] .tab:not(.active) {
-            background: #fff3b8;
-            color: #073b4c
+            background: var(--card);
+            color: var(--navy);
         }
 
         body[data-theme="tropical"] .tab.active {
-            background: #007f83;
-            color: #fff
-        }
-
-        body[data-theme="tropical"] .player-header.winner,
-        body[data-theme="tropical"] .score-cell.winner,
-        body[data-theme="tropical"] .total-cell.winner {
-            background: #ef4f70;
-            color: #fff
+            background: #79c9c6;
+            color: #123f4a;
         }
 
         body[data-theme="tropical"] .score-cell:focus {
-            background: #fff;
-            color: #073b4c;
-            box-shadow: inset 0 0 0 2px #007f83
+            background: #eaf8f7;
+            color: var(--navy);
+            box-shadow: inset 0 0 0 2px #4fa8a5;
         }
 
         body[data-theme="tropical"] .bottom-nav {
-            background: rgba(0, 127, 131, .96)
+            background: rgba(255, 255, 255, .96);
         }
 
         body[data-theme="tropical"] .nav-btn {
-            color: #d9fffb
+            color: var(--muted);
         }
 
         body[data-theme="tropical"] .nav-btn.active {
-            background: #ffcf4a;
-            color: #073b4c
+            background: #dff3f2;
+            color: var(--navy);
         }
 
         body[data-theme="tropical"] .inline-game-detail,
         body[data-theme="tropical"] .inline-score-table th {
-            background: #d9fbf4;
-            color: #073b4c
+            background: var(--soft);
+            color: var(--navy);
         }
 
         body[data-theme="tropical"] .summary-table tr:first-of-type td:first-child,
         body[data-theme="tropical"] .inline-score-table .winner-col {
-            color: #c92f50
+            color: var(--red);
         }
 
         body[data-theme="tropical"] .theme-choice.active {
-            background: #ffcf4a;
-            color: #073b4c
+            background: var(--soft);
+            color: var(--navy);
         }
 
         /* Theme-safe winner icon */
@@ -961,34 +1114,65 @@
         }
 
         body[data-theme="tropical"] .player-grid {
-            background: #80ddd4;
-            color: #073b4c
+            background: #f5d87c;
+            color: #073f49;
+            border-bottom: 1px solid #357187;
+        }
+
+        body[data-theme="tropical"] .player-header {
+            background: #f5d87c;
+            color: #073f49;
+            border-left-color: rgba(7, 63, 73, .22);
+        }
+
+        body[data-theme="tropical"] .round-head {
+            background: #56a7b0;
+            color: #ffffff;
         }
 
         body[data-theme="tropical"] .round-number {
-            background: #ffd45c;
-            color: #073b4c
+            background: #56a7b0;
+            color: #ffffff;
         }
 
+        body[data-theme="tropical"] .score-cell-wrap,
         body[data-theme="tropical"] .score-cell {
-            background: #fff3b8;
-            color: #073b4c
+            background: #e4f3f0;
+            color: #073f49;
         }
 
-        body[data-theme="tropical"] .hand-row:nth-child(even) .score-cell {
-            background: #e0faf4
+        /* Every scoring row is exactly the same color */
+        body[data-theme="tropical"] .hand-row:nth-child(even) .score-cell,
+        body[data-theme="tropical"] .hand-row:nth-child(odd) .score-cell,
+        body[data-theme="tropical"] .hand-row:nth-child(even) .score-cell-wrap,
+        body[data-theme="tropical"] .hand-row:nth-child(odd) .score-cell-wrap {
+            background: #e4f3f0;
+        }
+
+        body[data-theme="tropical"] .hand-row {
+            border-bottom-color: rgba(7, 63, 73, .14);
         }
 
         body[data-theme="tropical"] .total-section,
         body[data-theme="tropical"] .total-row,
         body[data-theme="tropical"] .total-cell {
-            background: #80ddd4;
-            color: #073b4c
+            background: #3d7c80;
+            color: #ffffff;
+        }
+
+        body[data-theme="tropical"] .total-spacer {
+            background: #3d7c80;
+            color: #ffffff;
         }
 
         body[data-theme="tropical"] .total-section {
-            border-top-color: #073b4c
+            border-top-color: #56a7b0;
         }
+
+        body[data-theme="tropical"] .scorecard-wrapper {
+            border: 0;
+        }
+
 
         /* PLAYER LIST / PICKER */
         .modal-backdrop {
@@ -997,7 +1181,7 @@
             inset: 0;
             background: rgba(7, 27, 53, .35);
             display: grid;
-            place-items: end center;
+            place-items: center;
             padding: 18px
         }
 
@@ -1177,6 +1361,10 @@
                 font-size: 14px
             }
 
+            .score-cell-wrap {
+                height: 52px;
+            }
+
             .score-cell {
                 height: 52px;
                 font-size: 15px
@@ -1230,6 +1418,7 @@
         <section id="scorePage" class="page active">
             <div class="page-heading">
                 <span id="gameStatus" class="eyebrow">scorecard</span>
+                <button id="wagerDisplay" class="wager-display" type="button">+ ADD WAGER</button>
             </div>
             <section class="card scorecard-wrapper">
                 <div class="score-horizontal-scroll">
@@ -1284,7 +1473,11 @@
                 hands: Array.from({ length: APP_CONFIG.initialVisibleHands }, createEmptyHand),
                 winnerId: null,
                 currentLeaderId: null,
-                dealerId: players[0].id
+                dealerId: players[0].id,
+                wager: {
+                    amount: null,
+                    type: "game"
+                }
             };
         }
         /* DATA ACCESS BOUNDARY
@@ -1368,7 +1561,6 @@
         }
 
         function renderPlayerHeaders() {
-            const winner = determineWinner();
             const header = document.createElement("div");
             header.className = "player-grid";
 
@@ -1379,7 +1571,7 @@
 
             for (const p of game.players) {
                 const el = document.createElement("div");
-                el.className = "player-header" + (p.id === winner?.id ? " winner" : "");
+                el.className = "player-header";
                 el.title = "Tap to choose a saved player or edit this name";
 
                 const wrap = document.createElement("div");
@@ -1413,19 +1605,87 @@
             })
         }
 
+        function getHandWagerWinner(hand) {
+            if (!game.wager || game.wager.type !== "hand" || Number(game.wager.amount) <= 0) {
+                return null;
+            }
+
+            if (!isHandComplete(hand)) {
+                return null;
+            }
+
+            const scores = game.players.map(player => ({
+                player,
+                score: Number(hand.scores[player.id])
+            }));
+
+            const highScore = Math.max(...scores.map(item => item.score));
+            const winners = scores.filter(item => item.score === highScore);
+
+            if (winners.length !== 1) {
+                return null;
+            }
+
+            return {
+                playerId: winners[0].player.id,
+                payout: Number(game.wager.amount) * (game.players.length - 1)
+            };
+        }
+
         function renderHands(container) {
-            const winner = determineWinner();
             game.hands.forEach((hand, handIndex) => {
-                const row = document.createElement("div"); row.className = "hand-row"; const num = document.createElement("div"); num.className = "round-number"; num.textContent = handIndex + 1; row.appendChild(num);
-                game.players.forEach((p, playerIndex) => { const input = document.createElement("input"); input.className = "score-cell" + (p.id === winner?.id ? " winner" : ""); input.type = "number"; input.inputMode = "numeric"; input.autocomplete = "off"; input.placeholder = "—"; input.dataset.handIndex = handIndex; input.dataset.playerIndex = playerIndex; input.dataset.playerId = p.id; const s = hand.scores[p.id]; input.value = s === undefined ? "" : s; input.addEventListener("input", handleScoreInput); input.addEventListener("keydown", handleScoreKeyDown); row.appendChild(input) });
-                container.appendChild(row)
-            })
+                const row = document.createElement("div");
+                row.className = "hand-row";
+
+                const num = document.createElement("div");
+                num.className = "round-number";
+                num.textContent = handIndex + 1;
+                row.appendChild(num);
+
+                const handWagerWinner = getHandWagerWinner(hand);
+
+                game.players.forEach((p, playerIndex) => {
+                    const wrap = document.createElement("div");
+                    wrap.className = "score-cell-wrap";
+
+                    const input = document.createElement("input");
+                    input.className = "score-cell";
+                    input.type = "number";
+                    input.inputMode = "numeric";
+                    input.autocomplete = "off";
+                    input.placeholder = "—";
+                    input.dataset.handIndex = handIndex;
+                    input.dataset.playerIndex = playerIndex;
+                    input.dataset.playerId = p.id;
+
+                    const s = hand.scores[p.id];
+                    input.value = s === undefined ? "" : s;
+
+                    input.addEventListener("input", handleScoreInput);
+                    input.addEventListener("keydown", handleScoreKeyDown);
+
+                    wrap.appendChild(input);
+
+                    if (handWagerWinner?.playerId === p.id) {
+                        const payout = document.createElement("span");
+                        payout.className = "hand-payout";
+                        payout.textContent = `+$${handWagerWinner.payout}`;
+                        wrap.appendChild(payout);
+                    }
+
+                    row.appendChild(wrap);
+                });
+
+                container.appendChild(row);
+            });
         }
         function renderTotals() {
-            const winner = determineWinner(),
-                totals = getTotals(),
-                section = document.createElement("div");
+            const totals = getTotals();
+            const leader = game.status === "finished"
+                ? game.players.find(p => p.id === game.winnerId)
+                : getDisplayedLeader();
 
+            const section = document.createElement("div");
             section.className = "total-section";
 
             const row = document.createElement("div");
@@ -1438,22 +1698,151 @@
 
             for (const p of game.players) {
                 const el = document.createElement("div");
-                el.className = "total-cell" + (p.id === winner?.id ? " winner" : "");
+                el.className = "total-cell" + (p.id === leader?.id ? " leader-circle" : "");
                 el.dataset.playerId = p.id;
                 el.textContent = totals[p.id];
-                row.appendChild(el)
+
+                el.addEventListener("click", () => showPointsRemaining(el, p.id));
+
+                row.appendChild(el);
             }
 
             section.appendChild(row);
-            scorecardElement.appendChild(section)
+            scorecardElement.appendChild(section);
         }
         function showPointsRemaining(el, playerId) {
             const remaining = Math.max(0, game.winningScore - getPlayerTotal(playerId));
-            clearTimeout(el._remainingTimer); el.textContent = `${remaining} to go`;
-            el._remainingTimer = setTimeout(() => { if (document.body.contains(el)) el.textContent = getPlayerTotal(playerId) }, 2000)
+
+            clearTimeout(el._remainingTimer);
+
+            el.textContent = `${remaining} to go`;
+            el.style.fontWeight = "500";
+            el.style.fontStyle = "italic";
+            el.style.fontSize = "16px";
+            el.style.display = "flex";
+            el.style.alignItems = "center";
+            el.style.justifyContent = "center";
+
+            el._remainingTimer = setTimeout(() => {
+                if (document.body.contains(el)) {
+                    el.textContent = getPlayerTotal(playerId);
+                    el.style.fontWeight = "";
+                    el.style.fontStyle = "";
+                    el.style.fontSize = "";
+                    el.style.display = "";
+                    el.style.alignItems = "";
+                    el.style.justifyContent = "";
+                }
+            }, 1500);
         }
 
-        function renderGameStatus() { gameStatusElement.textContent = "scorecard" }
+        function isWagerLocked() {
+            return game.hands[0] ? isHandComplete(game.hands[0]) : false;
+        }
+
+        function renderGameStatus() {
+            gameStatusElement.textContent = "scorecard";
+
+            const wagerDisplay = $("wagerDisplay");
+            if (!wagerDisplay) return;
+
+            const wager = game.wager;
+            const hasWager = wager && Number(wager.amount) > 0;
+            const locked = isWagerLocked();
+            const winner = determineWinner();
+
+            if (!hasWager) {
+                wagerDisplay.textContent = locked ? "NO WAGER 🔒" : "+ ADD WAGER";
+            } else {
+                const typeLabel = wager.type === "hand" ? "HAND" : "GAME";
+                wagerDisplay.textContent = `$${Number(wager.amount)} · ${typeLabel}${locked && !winner ? " 🔒" : ""}`;
+            }
+
+            if (winner && hasWager) {
+                wagerDisplay.disabled = false;
+                wagerDisplay.classList.remove("locked");
+                wagerDisplay.onclick = showWinnerPopup;
+                return;
+            }
+
+            wagerDisplay.disabled = locked;
+            wagerDisplay.classList.toggle("locked", locked);
+            wagerDisplay.onclick = locked ? null : openWagerPicker;
+        }
+
+        function openWagerPicker() {
+            if (isWagerLocked()) return;
+
+            if (!game.wager) {
+                game.wager = { amount: null, type: "game" };
+            }
+
+            let selectedType = game.wager.type || "game";
+
+            openModal(`
+        <div class="modal-head">
+            <h3>set wager</h3>
+            <button class="close-btn" data-close-modal>×</button>
+        </div>
+
+        <div class="wager-options">
+            <button class="wager-type ${selectedType === "game" ? "active" : ""}" data-wager-type="game">
+                GAME
+            </button>
+            <button class="wager-type ${selectedType === "hand" ? "active" : ""}" data-wager-type="hand">
+                PER HAND
+            </button>
+        </div>
+
+        <div class="wager-amount-wrap">
+            <span class="wager-dollar">$</span>
+            <input
+                id="wagerAmount"
+                class="wager-amount"
+                type="number"
+                inputmode="decimal"
+                min="0"
+                step="1"
+                placeholder="0"
+                value="${game.wager.amount ?? ""}"
+            >
+        </div>
+
+        <button id="saveWager" class="wager-save">SAVE WAGER</button>
+    `);
+
+            modalCard.querySelector("[data-close-modal]").onclick = closeModal;
+
+            modalCard.querySelectorAll("[data-wager-type]").forEach(button => {
+                button.onclick = () => {
+                    selectedType = button.dataset.wagerType;
+
+                    modalCard.querySelectorAll("[data-wager-type]").forEach(b => {
+                        b.classList.toggle(
+                            "active",
+                            b.dataset.wagerType === selectedType
+                        );
+                    });
+                };
+            });
+
+            $("saveWager").onclick = () => {
+                const amount = Number($("wagerAmount").value);
+
+                if (!Number.isFinite(amount) || amount <= 0) {
+                    $("wagerAmount").focus();
+                    return;
+                }
+
+                game.wager = {
+                    amount,
+                    type: selectedType
+                };
+
+                closeModal();
+                renderGameStatus();
+            };
+        }
 
         function handleScoreInput(e) {
             const input = e.target;
@@ -1473,6 +1862,10 @@
 
             if (!isHandComplete(game.hands[handIndex])) return;
 
+            if (handIndex === 0) {
+                renderGameStatus();
+            }
+
             newRowTimer = setTimeout(() => {
                 if (!isHandComplete(game.hands[handIndex])) return;
 
@@ -1483,9 +1876,9 @@
 
                 const nextDealerIndex = (currentDealerIndex + 1) % game.players.length;
                 game.dealerId = game.players[nextDealerIndex].id;
-
                 if (determineWinner()) {
                     renderGame();
+                    showWinnerPopup();
                     return;
                 }
 
@@ -1503,8 +1896,20 @@
         function focusScoreCell(h, p) { requestAnimationFrame(() => { const el = document.querySelector(`.score-cell[data-hand-index="${h}"][data-player-index="${p}"]`); if (el) { el.focus(); el.select() } }) }
         function focusFirstEmptyCell(h) { const hand = game.hands[h]; for (let i = 0; i < game.players.length; i++) { const v = hand.scores[game.players[i].id]; if (v === undefined || v === "") { focusScoreCell(h, i); return } } }
         function updateTotalsOnly() {
-            const totals = getTotals(), winner = determineWinner(), cells = document.querySelectorAll(".total-cell");
-            game.players.forEach((p, i) => { if (!cells[i]) return; cells[i].classList.toggle("winner", p.id === winner?.id); cells[i].textContent = String(totals[p.id]) })
+            const totals = getTotals();
+            const leader = game.status === "finished"
+                ? game.players.find(p => p.id === game.winnerId)
+                : getDisplayedLeader();
+
+            const cells = document.querySelectorAll(".total-cell");
+
+            game.players.forEach((p, i) => {
+                if (!cells[i]) return;
+
+                cells[i].classList.toggle("leader-circle", p.id === leader?.id);
+                cells[i].classList.remove("winner");
+                cells[i].textContent = String(totals[p.id]);
+            });
         }
 
 
@@ -1533,6 +1938,162 @@
 
         async function saveProgress() { game.status = "active"; game = await gameRepository.save(game); renderGameStatus(); showMessage("Game saved.") }
         async function pauseGame() { game.status = "paused"; game = await gameRepository.save(game); renderGameStatus(); showMessage("Game paused and saved.") }
+
+        function getWagerSettlement() {
+            if (!game.wager || Number(game.wager.amount) <= 0) {
+                return null;
+            }
+
+            const amount = Number(game.wager.amount);
+            const balances = Object.fromEntries(
+                game.players.map(player => [player.id, 0])
+            );
+
+            if (game.wager.type === "game") {
+                const winner = determineWinner() || determineLeader();
+                if (!winner) return null;
+
+                for (const player of game.players) {
+                    if (player.id === winner.id) continue;
+
+                    balances[winner.id] += amount;
+                    balances[player.id] -= amount;
+                }
+            } else {
+                for (const hand of completedHands()) {
+                    const result = getHandWagerWinner(hand);
+                    if (!result) continue;
+
+                    for (const player of game.players) {
+                        if (player.id === result.playerId) continue;
+
+                        balances[result.playerId] += amount;
+                        balances[player.id] -= amount;
+                    }
+                }
+            }
+
+            const creditors = game.players
+                .map(player => ({
+                    player,
+                    amount: balances[player.id]
+                }))
+                .filter(item => item.amount > 0)
+                .sort((a, b) => b.amount - a.amount);
+
+            const debtors = game.players
+                .map(player => ({
+                    player,
+                    amount: -balances[player.id]
+                }))
+                .filter(item => item.amount > 0)
+                .sort((a, b) => b.amount - a.amount);
+
+            const payments = [];
+            let creditorIndex = 0;
+            let debtorIndex = 0;
+
+            while (
+                creditorIndex < creditors.length &&
+                debtorIndex < debtors.length
+            ) {
+                const creditor = creditors[creditorIndex];
+                const debtor = debtors[debtorIndex];
+                const payment = Math.min(creditor.amount, debtor.amount);
+
+                if (payment > 0) {
+                    payments.push({
+                        from: debtor.player,
+                        to: creditor.player,
+                        amount: payment
+                    });
+                }
+
+                creditor.amount -= payment;
+                debtor.amount -= payment;
+
+                if (creditor.amount <= 0) creditorIndex++;
+                if (debtor.amount <= 0) debtorIndex++;
+            }
+
+            return {
+                balances,
+                payments
+            };
+        }
+
+        function showWinnerPopup() {
+            const winner = determineWinner() || determineLeader();
+            if (!winner) return;
+
+            const wager = game.wager;
+            const hasWager = wager && Number(wager.amount) > 0;
+            const settlement = hasWager ? getWagerSettlement() : null;
+
+            let moneyHtml = "";
+
+            if (hasWager && settlement) {
+                if (wager.type === "game") {
+                    const winnings = Math.max(0, settlement.balances[winner.id]);
+
+                    moneyHtml = `
+                <div class="winner-money">
+                    <div class="winner-money-label">winnings</div>
+                    <div class="winner-money-total">+$${winnings}</div>
+                </div>
+
+                <div class="settlement-title">settle up</div>
+
+                ${settlement.payments.map(payment => `
+                    <div class="settlement-row">
+                        <span>${escapeHtml(payment.from.name)} pays ${escapeHtml(payment.to.name)}</span>
+                        <strong>$${payment.amount}</strong>
+                    </div>
+                `).join("")}
+            `;
+                } else {
+                    const winnerProceeds = Math.max(0, settlement.balances[winner.id]);
+
+                    const paymentRows = settlement.payments.length
+                        ? settlement.payments.map(payment => `
+                    <div class="settlement-row">
+                        <span>${escapeHtml(payment.from.name)} pays ${escapeHtml(payment.to.name)}</span>
+                        <strong>$${payment.amount}</strong>
+                    </div>
+                `).join("")
+                        : `
+                    <div class="settlement-row">
+                        <span>Everyone is even</span>
+                        <strong>$0</strong>
+                    </div>
+                `;
+
+                    moneyHtml = `
+                <div class="winner-money">
+                    <div class="winner-money-label">${escapeHtml(winner.name)}'s proceeds</div>
+                    <div class="winner-money-total">+$${winnerProceeds}</div>
+                </div>
+
+                <div class="settlement-title">settle up</div>
+                ${paymentRows}
+            `;
+                }
+            }
+
+            openModal(`
+        <div class="winner-popup">
+            <div class="winner-title">${escapeHtml(winner.name)} WINS!</div>
+            <div class="winner-score">Final score: ${getPlayerTotal(winner.id)}</div>
+
+            ${moneyHtml}
+
+            <button id="winnerDone" class="winner-done">DONE</button>
+        </div>
+    `);
+
+            $("winnerDone").onclick = closeModal;
+        }
+
         function finishGame() {
             if (completedHands().length === 0) return showMessage("Enter at least one complete hand first.");
             const leader = determineLeader();
