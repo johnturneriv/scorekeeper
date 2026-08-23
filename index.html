@@ -452,20 +452,7 @@
             font-weight: 800
         }
 
-        .leader-ace {
-            flex: 0 0 auto;
-            display: inline-grid;
-            place-items: center;
-            width: 18px;
-            height: 24px;
-            border: 1px solid var(--navy);
-            border-radius: 3px;
-            background: #fff;
-            color: var(--navy);
-            font-size: 8px;
-            font-weight: 800;
-            line-height: 1
-        }
+
 
         .player-header:hover {
             background: var(--soft)
@@ -757,7 +744,137 @@
             font-size: 18px
         }
 
+        /* CLASSIC SCORECARD — FINAL */
 
+        body[data-theme="classic"] {
+            --bg: #f3e3bd;
+            --card: #f7ecd3;
+            --navy: #0d2945;
+            --red: #a8201a;
+            --gold: #b58a3a;
+            --muted: #75694f;
+            --line: #c9a768;
+            --soft: #ead9b3;
+
+            background-color: #f3e3bd;
+            background-image: url("classic-bg.png");
+            background-size: cover;
+            background-position: center top;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+        }
+
+        /* SCORECARD OUTER BORDER */
+        body[data-theme="classic"] .scorecard-wrapper {
+            background: #f7ecd3;
+            border: 1px solid #b58a3a;
+            box-shadow: 0 8px 20px rgba(66, 45, 18, .18);
+        }
+
+        /* PLAYER HEADER */
+        body[data-theme="classic"] .player-grid {
+            background: #0d2945;
+            color: #f7ecd3;
+            border-bottom: 1px solid #b58a3a;
+        }
+
+        body[data-theme="classic"] .player-header {
+            background: #0d2945;
+            color: #f7ecd3;
+            border-left: 1px solid #b58a3a;
+        }
+
+        body[data-theme="classic"] .round-head {
+            background: #0d2945;
+            color: #f7ecd3;
+        }
+
+        /* HAND ROWS */
+        body[data-theme="classic"] .round-number {
+            background: #0d2945;
+            color: #f7ecd3;
+        }
+
+        body[data-theme="classic"] .score-cell-wrap,
+        body[data-theme="classic"] .score-cell {
+            background: #f7ecd3;
+            color: #0d2945;
+        }
+
+        body[data-theme="classic"] .hand-row {
+            border-bottom: 1px solid #c9a768;
+        }
+
+        body[data-theme="classic"] .score-cell {
+            border-left: 1px solid #c9a768;
+        }
+
+        body[data-theme="classic"] .score-cell::placeholder {
+            color: rgba(13, 41, 69, .42);
+        }
+
+        /* TOTAL ROW */
+        body[data-theme="classic"] .total-section {
+            background: #f7ecd3;
+            border-top: 2px solid #b58a3a;
+        }
+
+        body[data-theme="classic"] .total-row,
+        body[data-theme="classic"] .total-cell {
+            background: #f7ecd3;
+            color: #0d2945;
+        }
+
+        body[data-theme="classic"] .total-spacer {
+            background: #0d2945;
+            color: #f7ecd3;
+        }
+
+        body[data-theme="classic"] .total-cell {
+            border-left: 1px solid #c9a768;
+        }
+
+        /* SCORE ENTRY */
+        body[data-theme="classic"] .score-cell:focus {
+            background: #fff8e8;
+            color: #0d2945;
+            box-shadow: inset 0 0 0 2px #b58a3a;
+        }
+
+        /* ADD WAGER */
+        body[data-theme="classic"] .wager-display {
+            background: #0d2945;
+            color: #f7ecd3;
+            border: 1px solid #b58a3a;
+        }
+
+        /* BOTTOM BUTTONS */
+        body[data-theme="classic"] .add-player-bottom {
+            background: #0d2945;
+            color: #f7ecd3;
+            border: 1px solid #b58a3a;
+        }
+
+        body[data-theme="classic"] .end-game-bottom {
+            background: #8f1818;
+            color: #fff4dc;
+            border: 1px solid #b58a3a;
+        }
+
+        /* BOTTOM NAV */
+        body[data-theme="classic"] .bottom-nav {
+            background: #0d2945;
+            border-top: 1px solid #b58a3a;
+        }
+
+        body[data-theme="classic"] .nav-btn {
+            color: #d5ad5c;
+            border-right-color: rgba(181, 138, 58, .55);
+        }
+
+        body[data-theme="classic"] .nav-btn.active {
+            color: #f0c866;
+        }
 
         body[data-theme="poker"] {
             --bg: #0d3b2e;
@@ -818,11 +935,7 @@
             background: rgba(240, 91, 80, .14)
         }
 
-        body[data-theme="poker"] .leader-ace {
-            background: #f8f4e6;
-            color: #0b3328;
-            border-color: #f8f4e6
-        }
+
 
 
 
@@ -1159,41 +1272,19 @@
             color: var(--navy);
         }
 
-        /* Theme-safe winner icon */
+        /* Dealer icon — same in all themes */
         .leader-icon {
             flex: 0 0 auto;
             display: inline-grid;
             place-items: center;
-            width: 24px;
-            height: 24px;
+            width: 28px;
+            height: 28px;
             padding: 0;
             border: 0;
             background: transparent;
-            font-size: 17px;
+            font-size: 28px;
             font-weight: 800;
-            line-height: 1
-        }
-
-        body[data-theme="poker"] .leader-icon {
-            width: 18px;
-            height: 26px;
-            padding: 0;
-            border: 1px solid #082b22;
-            border-radius: 3px;
-            background: #fff8e7;
-            color: #082b22;
-            font-family: Georgia, serif;
-            font-size: 9px;
-            font-weight: 800;
-            box-shadow: 0 1px 2px rgba(0, 0, 0, .18)
-        }
-
-        body[data-theme="tropical"] .leader-icon {
-            width: 24px;
-            height: 24px;
-            border: 0;
-            background: transparent;
-            font-size: 18px
+            line-height: 1;
         }
 
         .total-cell {
@@ -1203,64 +1294,97 @@
             padding-bottom: 17px
         }
 
+        /* TROPICAL SCORECARD — FINAL */
+
+        /* SCORECARD OUTER BORDER */
+        body[data-theme="tropical"] .scorecard-wrapper {
+            background: #fff8e8;
+            border: 1px solid #f4c84e;
+            box-shadow: 0 8px 22px rgba(4, 48, 58, .18);
+        }
+
+        /* PLAYER HEADER */
         body[data-theme="tropical"] .player-grid {
-            background: #f5d87c;
-            color: #073f49;
-            border-bottom: 1px solid #357187;
+            background: #064f50;
+            color: #fff8e8;
+            border-bottom: 1px solid #f4c84e;
         }
 
         body[data-theme="tropical"] .player-header {
-            background: #f5d87c;
-            color: #073f49;
-            border-left-color: rgba(7, 63, 73, .22);
+            background: #064f50;
+            color: #fff8e8;
+            border-left: 1px solid rgba(244, 200, 78, .45);
         }
 
         body[data-theme="tropical"] .round-head {
-            background: #56a7b0;
-            color: #ffffff;
+            background: #064f50;
+            color: #f4c84e;
         }
 
+        /* HAND NUMBER COLUMN */
         body[data-theme="tropical"] .round-number {
-            background: #56a7b0;
+            background: #5da72f;
             color: #ffffff;
         }
 
+        /* SCORE CELLS */
         body[data-theme="tropical"] .score-cell-wrap,
         body[data-theme="tropical"] .score-cell {
-            background: #e4f3f0;
-            color: #073f49;
+            background: #fff8e8;
+            color: #064f50;
         }
 
-        /* Every scoring row is exactly the same color */
+        /* KEEP EVERY HAND ROW THE SAME COLOR */
         body[data-theme="tropical"] .hand-row:nth-child(even) .score-cell,
         body[data-theme="tropical"] .hand-row:nth-child(odd) .score-cell,
         body[data-theme="tropical"] .hand-row:nth-child(even) .score-cell-wrap,
         body[data-theme="tropical"] .hand-row:nth-child(odd) .score-cell-wrap {
-            background: #e4f3f0;
+            background: #fff8e8;
         }
 
+        /* SCORECARD GRID LINES */
         body[data-theme="tropical"] .hand-row {
-            border-bottom-color: rgba(7, 63, 73, .14);
+            border-bottom: 1px solid rgba(6, 79, 80, .18);
         }
 
-        body[data-theme="tropical"] .total-section,
-        body[data-theme="tropical"] .total-row,
-        body[data-theme="tropical"] .total-cell {
-            background: #3d7c80;
-            color: #ffffff;
+        body[data-theme="tropical"] .score-cell {
+            border-left: 1px solid rgba(6, 79, 80, .18);
         }
 
-        body[data-theme="tropical"] .total-spacer {
-            background: #3d7c80;
-            color: #ffffff;
+        body[data-theme="tropical"] .score-cell::placeholder {
+            color: rgba(6, 79, 80, .42);
         }
 
+        /* PER-HAND WINNINGS — BRIGHT GREEN */
+        body[data-theme="tropical"] .hand-payout {
+            color: #5da72f;
+            font-size: 12px;
+            font-weight: 800;
+            opacity: 1;
+        }
+
+        /* TOTAL ROW */
         body[data-theme="tropical"] .total-section {
-            border-top-color: #56a7b0;
+            background: #064f50;
+            border-top: 2px solid #f4c84e;
         }
 
-        body[data-theme="tropical"] .scorecard-wrapper {
-            border: 0;
+        body[data-theme="tropical"] .total-row,
+        body[data-theme="tropical"] .total-cell,
+        body[data-theme="tropical"] .total-spacer {
+            background: #064f50;
+            color: #ffffff;
+        }
+
+        body[data-theme="tropical"] .total-cell {
+            border-left: 1px solid rgba(244, 200, 78, .35);
+        }
+
+        /* SCORE ENTRY */
+        body[data-theme="tropical"] .score-cell:focus {
+            background: #fffdf5;
+            color: #064f50;
+            box-shadow: inset 0 0 0 2px #5da72f;
         }
 
 
@@ -1492,11 +1616,10 @@
             </div>
             <button id="menuButton" class="menu-button" type="button" aria-label="Game menu">☰</button>
             <div id="gameMenu" class="game-menu hidden">
-                <button data-action="save">Save Progress</button>
-                <button data-action="pause">Pause Game</button>
+                <button data-action="pause">Save & Pause Game</button>
                 <div class="menu-divider"></div>
-                <button data-action="players">Player List</button>
-                <button data-action="remove-player">Remove Player from Game</button>
+                <button data-action="players">Add Player</button>
+                <button data-action="remove-player">Remove Player</button>
                 <div class="menu-divider"></div>
                 <button data-action="theme">Change Theme</button>
                 <div class="menu-divider"></div>
@@ -1598,9 +1721,9 @@
 
         function getLeaderIcon() {
             const theme = themeRepository.load();
-            if (theme === "poker") return "A♠";
-            if (theme === "tropical") return "😎";
-            return "💯"
+            if (theme === "poker") return "🃏";
+            if (theme === "tropical") return "🃏";
+            return "🃏"
         }
 
         function openThemePicker() {
@@ -2026,9 +2149,12 @@
         }
         function escapeHtml(value) { return String(value).replace(/[&<>'"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" }[c])) }
 
-        async function saveProgress() { game.status = "active"; game = await gameRepository.save(game); renderGameStatus(); showMessage("Game saved.") }
-        async function pauseGame() { game.status = "paused"; game = await gameRepository.save(game); renderGameStatus(); showMessage("Game paused and saved.") }
-
+        async function pauseGame() {
+            game.status = "paused";
+            game = await gameRepository.save(game);
+            renderGameStatus();
+            showMessage("Game saved and paused.");
+        }
         function getWagerSettlement() {
             if (!game.wager || Number(game.wager.amount) <= 0) {
                 return null;
@@ -2206,7 +2332,20 @@
         async function deleteGame() { if (!confirm("Delete this game? This cannot be undone.")) return; await gameRepository.deleteCurrentGame(); game = createNewGame(); await gameRepository.save(game); renderGame(); showPage("score") }
         function openSettings() { const value = prompt("Winning score:", game.winningScore); if (!value) return; const score = Number(value); if (!Number.isFinite(score) || score <= 0) return showMessage("Enter a valid winning score."); game.winningScore = score; showMessage(`Winning score set to ${score}.`) }
         function toggleMenu() { gameMenu.classList.toggle("hidden") } function closeMenu() { gameMenu.classList.add("hidden") }
-        async function handleMenuAction(e) { const b = e.target.closest("[data-action]"); if (!b) return; closeMenu(); const a = b.dataset.action; if (a === "save") await saveProgress(); else if (a === "pause") await pauseGame(); else if (a === "players") openPlayerListManager(); else if (a === "remove-player") removePlayer(); else if (a === "theme") openThemePicker(); else if (a === "settings") openSettings(); else if (a === "delete") await deleteGame() }
+        async function handleMenuAction(e) {
+            const b = e.target.closest("[data-action]");
+            if (!b) return;
+
+            closeMenu();
+            const a = b.dataset.action;
+
+            if (a === "pause") await pauseGame();
+            else if (a === "players") openPlayerListManager();
+            else if (a === "remove-player") removePlayer();
+            else if (a === "theme") openThemePicker();
+            else if (a === "settings") openSettings();
+            else if (a === "delete") await deleteGame();
+        }
         function showMessage(m) { messageElement.textContent = m; clearTimeout(showMessage.timeout); showMessage.timeout = setTimeout(() => messageElement.textContent = "", 2500) }
 
         function showPage(page) { currentPage = page; document.querySelectorAll(".page").forEach(x => x.classList.remove("active")); $(`${page}Page`).classList.add("active"); document.querySelectorAll(".nav-btn").forEach(x => x.classList.toggle("active", x.dataset.page === page)); if (page === "score") renderGame(); if (page === "stats") renderStats(); window.scrollTo(0, 0) }
