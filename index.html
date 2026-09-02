@@ -2494,25 +2494,36 @@
                     const dragged = handle.closest(".saved-player");
                     if (!dragged) return;
                     event.preventDefault();
-                    handle.setPointerCapture(event.pointerId);
+                    isReorderingSavedPlayers = true;
                     dragged.classList.add("dragging");
                     const move = moveEvent => {
+                        if (moveEvent.pointerId !== event.pointerId) return;
+                        moveEvent.preventDefault();
                         const target = document.elementFromPoint(moveEvent.clientX, moveEvent.clientY)?.closest(".saved-player[data-saved-player-id]");
                         if (!target || target === dragged || target.parentElement !== list) return;
                         const rect = target.getBoundingClientRect();
                         list.insertBefore(dragged, moveEvent.clientY < rect.top + rect.height / 2 ? target : target.nextSibling);
                     };
-                    const end = async () => {
-                        handle.removeEventListener("pointermove", move);
-                        handle.removeEventListener("pointerup", end);
-                        handle.removeEventListener("pointercancel", end);
+                    const end = async endEvent => {
+                        if (endEvent.pointerId !== event.pointerId) return;
+                        document.removeEventListener("pointermove", move);
+                        document.removeEventListener("pointerup", end);
+                        document.removeEventListener("pointercancel", end);
                         dragged.classList.remove("dragging");
                         const ids = [...list.querySelectorAll("[data-saved-player-id]")].map(row => row.dataset.savedPlayerId);
-                        await playerRepository.reorder(ids);
+                        try {
+                            await playerRepository.reorder(ids);
+                            showMessage("Player order saved.");
+                        } catch (error) {
+                            showMessage("Player order could not be saved.");
+                            if ($("savedPlayerRows") === list) await openPlayerListManager();
+                        } finally {
+                            isReorderingSavedPlayers = false;
+                        }
                     };
-                    handle.addEventListener("pointermove", move);
-                    handle.addEventListener("pointerup", end);
-                    handle.addEventListener("pointercancel", end);
+                    document.addEventListener("pointermove", move, { passive: false });
+                    document.addEventListener("pointerup", end);
+                    document.addEventListener("pointercancel", end);
                 });
             });
         }
@@ -2980,11 +2991,11 @@
             }
             scheduleRemoteRefresh();
         }
-        let savedPlayerRefreshTimer = null;
+        let savedPlayerRefreshTimer = null, isReorderingSavedPlayers = false;
         function refreshOpenSavedPlayerList() {
             clearTimeout(savedPlayerRefreshTimer);
             savedPlayerRefreshTimer = setTimeout(() => {
-                if ($("savedPlayerRows")) openPlayerListManager();
+                if (!isReorderingSavedPlayers && $("savedPlayerRows")) openPlayerListManager();
             }, 400);
         }
         function subscribeToGame() {
