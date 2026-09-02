@@ -177,6 +177,40 @@
             color: var(--red)
         }
 
+        .game-code-display {
+            padding: 8px 11px 6px;
+            color: var(--muted);
+            font-family: Inter, system-ui, sans-serif;
+            font-size: 11px;
+            font-weight: 800;
+            letter-spacing: .08em;
+            text-transform: uppercase;
+        }
+
+        .join-code-input {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 13px;
+            border: 1px solid var(--line);
+            border-radius: 9px;
+            background: var(--card);
+            color: var(--navy);
+            font-size: 20px;
+            font-weight: 800;
+            letter-spacing: .14em;
+            text-align: center;
+            outline: none;
+        }
+
+        .join-code-error {
+            min-height: 18px;
+            margin: 7px 0 3px;
+            color: var(--red);
+            font-size: 12px;
+            font-weight: 700;
+            text-align: center;
+        }
+
         .menu-divider {
             height: 1px;
             background: var(--line);
@@ -1672,6 +1706,9 @@
             </div>
             <button id="menuButton" class="menu-button" type="button" aria-label="Game menu">☰</button>
             <div id="gameMenu" class="game-menu hidden">
+                <div id="menuGameCode" class="game-code-display">GAME -----</div>
+                <button data-action="join">Join Game</button>
+                <div class="menu-divider"></div>
                 <button data-action="pause">Save & Pause Game</button>
                 <div class="menu-divider"></div>
                 <button data-action="players">Add Player</button>
@@ -1686,7 +1723,7 @@
 
         <section id="scorePage" class="page active">
             <div class="page-heading">
-                <span id="gameStatus" class="eyebrow">scorecard</span>
+                <span id="gameStatus" class="eyebrow">connecting…</span>
                 <div class="heading-actions">
                     <button id="gameTimer" class="game-timer" type="button"
                         aria-label="Restart or resume game timer">0:00</button>
@@ -1722,7 +1759,11 @@
         <div id="modalCard" class="modal-card" role="dialog" aria-modal="true"></div>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
+        const SUPABASE_URL = "https://anytokbzwcqtjgurwikv.supabase.co";
+        const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_M0WZYzUogTWROcl3egGAJg_X0G997_t";
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
         const APP_CONFIG = { minPlayers: 2, maxPlayers: 8, defaultWinningScore: 500, initialVisibleHands: 5 };
         const DEFAULT_SAVED_PLAYERS = [];
         function createId() { return typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).slice(2) }
@@ -1758,22 +1799,114 @@
                 }
             };
         }
-        /* DATA ACCESS BOUNDARY
-           All game persistence goes through this repository.
-           To make the app multi-user later, replace this localStorage adapter
-           with Firebase/Supabase calls; the UI and game logic do not need to change. */
         const gameRepository = {
-            async save(g) { const now = new Date().toISOString(), x = { ...g, updatedAt: now, lastSavedAt: now }; localStorage.setItem("ginRummyCurrentGame", JSON.stringify(x)); return x },
-            async loadCurrentGame() { try { return JSON.parse(localStorage.getItem("ginRummyCurrentGame")) } catch { return null } },
-            async loadFinishedGames() { try { return JSON.parse(localStorage.getItem("ginRummyFinishedGames") || "[]") } catch { return [] } },
-            async archive(g) { const a = await this.loadFinishedGames(); a.push(g); localStorage.setItem("ginRummyFinishedGames", JSON.stringify(a)) },
-            async deleteFinishedGame(gameId) { const games = await this.loadFinishedGames(); localStorage.setItem("ginRummyFinishedGames", JSON.stringify(games.filter(g => g.id !== gameId))) },
-            async deleteCurrentGame() { localStorage.removeItem("ginRummyCurrentGame") }
+            async create() {
+                const { data, error } = await supabaseClient.rpc("create_new_game");
+                if (error) throw error;
+                const created = data[0];
+                const fresh = createNewGame();
+                fresh.id = created.game_id;
+                fresh.gameCode = created.game_code;
+                localStorage.setItem("ginRummyJoinedGameId", fresh.id);
+                await this.insertInitialGame(fresh);
+                return fresh;
+            },
+            async insertInitialGame(g) {
+                await this.save(g);
+                const { error: playerError } = await supabaseClient.from("game_players").insert(g.players.map((p, i) => ({ id: p.id, game_id: g.id, name: p.name, position: i })));
+                if (playerError) throw playerError;
+                const { error: handError } = await supabaseClient.from("hands").insert(g.hands.map((h, i) => ({ id: h.id, game_id: g.id, hand_number: i + 1 })));
+                if (handError) throw handError;
+                await this.save(g);
+            },
+            async save(g) {
+                const elapsed = Number(g.timer?.elapsedMs) || 0;
+                const row = {
+                    status: g.status,
+                    winning_score: g.winningScore,
+                    dealer_player_id: g.dealerId,
+                    winner_player_id: g.winnerId,
+                    wager_amount: g.wager?.amount || null,
+                    wager_type: g.wager?.type || "game",
+                    timer_elapsed_ms: Math.round(elapsed || 0),
+                    timer_started_at: g.timer?.running ? g.timer.startedAt : null,
+                    finished_at: g.finishedAt,
+                    updated_at: new Date().toISOString()
+                };
+                const { error } = await supabaseClient.from("games").update(row).eq("id", g.id);
+                if (error) throw error;
+                return g;
+            },
+            async loadCurrentGame() {
+                const id = localStorage.getItem("ginRummyJoinedGameId");
+                return id ? this.loadGame(id) : null;
+            },
+            async loadGame(id) {
+                const [{ data: g, error }, { data: players }, { data: hands }] = await Promise.all([
+                    supabaseClient.from("games").select("*").eq("id", id).single(),
+                    supabaseClient.from("game_players").select("*").eq("game_id", id).order("position"),
+                    supabaseClient.from("hands").select("*").eq("game_id", id).order("hand_number")
+                ]);
+                if (error) return null;
+                const handIds = (hands || []).map(h => h.id);
+                let scores = [];
+                if (handIds.length) {
+                    const result = await supabaseClient.from("scores").select("*").in("hand_id", handIds);
+                    scores = result.data || [];
+                }
+                return this.assemble(g, players || [], hands || [], scores);
+            },
+            assemble(g, players, hands, scores) {
+                return {
+                    id: g.id, gameCode: g.game_code, status: g.status,
+                    createdAt: g.created_at, updatedAt: g.updated_at, finishedAt: g.finished_at,
+                    winningScore: g.winning_score, players: players.map(p => ({ id: p.id, name: p.name })),
+                    hands: hands.map(h => ({ id: h.id, scores: Object.fromEntries(scores.filter(s => s.hand_id === h.id).map(s => [s.player_id, s.score])) })),
+                    winnerId: g.winner_player_id, currentLeaderId: null, dealerId: g.dealer_player_id,
+                    timer: { elapsedMs: Number(g.timer_elapsed_ms) || 0, startedAt: g.timer_started_at, running: g.status === "active" && !!g.timer_started_at },
+                    wager: { amount: g.wager_amount, type: g.wager_type || "game" }
+                };
+            },
+            async loadFinishedGames() {
+                const { data: games, error } = await supabaseClient.from("games").select("*").eq("status", "finished").order("finished_at", { ascending: false });
+                if (error || !games?.length) return [];
+                const ids = games.map(g => g.id);
+                const [{ data: players }, { data: hands }] = await Promise.all([
+                    supabaseClient.from("game_players").select("*").in("game_id", ids).order("position"),
+                    supabaseClient.from("hands").select("*").in("game_id", ids).order("hand_number")
+                ]);
+                const handIds = (hands || []).map(h => h.id);
+                const { data: scores } = handIds.length ? await supabaseClient.from("scores").select("*").in("hand_id", handIds) : { data: [] };
+                return games.map(g => this.assemble(g, (players || []).filter(p => p.game_id === g.id), (hands || []).filter(h => h.game_id === g.id), scores || []));
+            },
+            async saveScore(handId, playerId, value) {
+                if (value === "") return supabaseClient.from("scores").delete().eq("hand_id", handId).eq("player_id", playerId);
+                return supabaseClient.from("scores").upsert({ hand_id: handId, player_id: playerId, score: Number(value), updated_at: new Date().toISOString() });
+            },
+            async addHand(hand, index) { return supabaseClient.from("hands").insert({ id: hand.id, game_id: game.id, hand_number: index + 1 }) },
+            async addPlayer(player, index) { return supabaseClient.from("game_players").insert({ id: player.id, game_id: game.id, name: player.name, position: index }) },
+            async updatePlayer(player, index) { return supabaseClient.from("game_players").update({ name: player.name, position: index }).eq("id", player.id) },
+            async deletePlayer(id) { return supabaseClient.from("game_players").delete().eq("id", id) },
+            async join(code) {
+                const { data, error } = await supabaseClient.rpc("join_game", { requested_code: String(code).trim() });
+                if (error || !data?.length) throw error || new Error("Game code not found.");
+                localStorage.setItem("ginRummyJoinedGameId", data[0].game_id);
+                return this.loadGame(data[0].game_id);
+            },
+            async archive(g) {
+                const { data: storedHands } = await supabaseClient.from("hands").select("id").eq("game_id", g.id);
+                const keep = new Set(g.hands.map(h => h.id));
+                const remove = (storedHands || []).filter(h => !keep.has(h.id)).map(h => h.id);
+                if (remove.length) await supabaseClient.from("hands").delete().in("id", remove);
+                await this.save(g);
+            },
+            async deleteFinishedGame(gameId) { const { error } = await supabaseClient.from("games").delete().eq("id", gameId); if (error) throw error },
+            async deleteCurrentGame() { const id = game?.id; if (id) { const { error } = await supabaseClient.from("games").delete().eq("id", id); if (error) throw error } localStorage.removeItem("ginRummyJoinedGameId") }
         };
-        /* Saved-player persistence uses the same replaceable repository pattern. */
         const playerRepository = {
-            load() { try { const saved = JSON.parse(localStorage.getItem("ginRummySavedPlayers") || "null"); return Array.isArray(saved) ? saved : DEFAULT_SAVED_PLAYERS.slice() } catch { return DEFAULT_SAVED_PLAYERS.slice() } },
-            save(players) { localStorage.setItem("ginRummySavedPlayers", JSON.stringify(players)) }
+            async load() { const { data, error } = await supabaseClient.from("saved_players").select("id,name").order("name"); if (error) throw error; return data || [] },
+            async add(name) { const { error } = await supabaseClient.from("saved_players").insert({ name: name.trim() }); if (error && error.code !== "23505") throw error },
+            async remove(id) { const { error } = await supabaseClient.from("saved_players").delete().eq("id", id); if (error) throw error }
         };
         const hiddenStatsPlayerRepository = {
             load() { try { const hidden = JSON.parse(localStorage.getItem("ginRummyHiddenStatsPlayers") || "[]"); return Array.isArray(hidden) ? hidden : [] } catch { return [] } },
@@ -2095,6 +2228,15 @@
         function renderGameStatus() {
             gameStatusElement.textContent = "scorecard";
 
+            const menuGameCode = $("menuGameCode");
+            if (menuGameCode) menuGameCode.textContent = game.gameCode ? `GAME ${game.gameCode}` : "GAME -----";
+
+            const gameFinished = game.status === "finished";
+            $("finishButton").textContent = gameFinished ? "GAME ENDED & SAVED" : "END GAME";
+            $("finishButton").disabled = gameFinished;
+            $("addPlayerButton").disabled = gameFinished;
+            document.querySelectorAll(".score-cell").forEach(input => input.disabled = gameFinished);
+
             const pauseMenuButton = gameMenu.querySelector('[data-action="pause"]');
             if (pauseMenuButton) {
                 pauseMenuButton.textContent = game.status === "paused"
@@ -2200,6 +2342,7 @@
 
                 closeModal();
                 renderGameStatus();
+                gameRepository.save(game);
             };
         }
 
@@ -2214,6 +2357,7 @@
             } else {
                 game.hands[handIndex].scores[playerId] = Number(value);
             }
+            gameRepository.saveScore(game.hands[handIndex].id, playerId, value);
 
             updateTotalsOnly();
 
@@ -2235,6 +2379,7 @@
 
                 const nextDealerIndex = (currentDealerIndex + 1) % game.players.length;
                 game.dealerId = game.players[nextDealerIndex].id;
+                gameRepository.save(game);
                 if (determineWinner()) {
                     renderGame();
                     showWinnerPopup();
@@ -2242,7 +2387,9 @@
                 }
 
                 if (handIndex === game.hands.length - 1) {
-                    game.hands.push(createEmptyHand());
+                    const newHand = createEmptyHand();
+                    game.hands.push(newHand);
+                    gameRepository.addHand(newHand, game.hands.length - 1);
                     renderGame();
                     focusScoreCell(game.hands.length - 1, 0);
                 } else {
@@ -2251,7 +2398,7 @@
             }, 1500);
         }
         function handleScoreKeyDown(e) { if (e.key !== "Enter") return; e.preventDefault(); moveToNextScoreCell(Number(e.target.dataset.handIndex), Number(e.target.dataset.playerIndex)) }
-        function moveToNextScoreCell(handIndex, playerIndex) { if (playerIndex < game.players.length - 1) { focusScoreCell(handIndex, playerIndex + 1); return } const hand = game.hands[handIndex]; if (isHandComplete(hand)) { if (handIndex === game.hands.length - 1 && !determineWinner()) { clearTimeout(newRowTimer); newRowTimer = setTimeout(() => { if (handIndex === game.hands.length - 1 && !determineWinner()) { game.hands.push(createEmptyHand()); renderGame(); focusScoreCell(game.hands.length - 1, 0) } }, 2000); return } focusScoreCell(Math.min(handIndex + 1, game.hands.length - 1), 0); return } focusFirstEmptyCell(handIndex) }
+        function moveToNextScoreCell(handIndex, playerIndex) { if (playerIndex < game.players.length - 1) { focusScoreCell(handIndex, playerIndex + 1); return } const hand = game.hands[handIndex]; if (isHandComplete(hand)) { if (handIndex === game.hands.length - 1 && !determineWinner()) { clearTimeout(newRowTimer); newRowTimer = setTimeout(() => { if (handIndex === game.hands.length - 1 && !determineWinner()) { const newHand = createEmptyHand(); game.hands.push(newHand); gameRepository.addHand(newHand, game.hands.length - 1); renderGame(); focusScoreCell(game.hands.length - 1, 0) } }, 2000); return } focusScoreCell(Math.min(handIndex + 1, game.hands.length - 1), 0); return } focusFirstEmptyCell(handIndex) }
         function focusScoreCell(h, p) { requestAnimationFrame(() => { const el = document.querySelector(`.score-cell[data-hand-index="${h}"][data-player-index="${p}"]`); if (el) { el.focus(); el.select() } }) }
         function focusFirstEmptyCell(h) { const hand = game.hands[h]; for (let i = 0; i < game.players.length; i++) { const v = hand.scores[game.players[i].id]; if (v === undefined || v === "") { focusScoreCell(h, i); return } } }
         function updateTotalsOnly() {
@@ -2273,24 +2420,24 @@
 
 
 
-        function addPlayer() { if (game.players.length >= APP_CONFIG.maxPlayers) return showMessage(`Maximum of ${APP_CONFIG.maxPlayers} players.`); game.players.push({ id: createId(), name: `Player ${game.players.length + 1}` }); for (const h of game.hands) delete h.scores[game.players[game.players.length - 1].id]; renderGame(); openPlayerPicker(game.players[game.players.length - 1].id); showMessage("Player column added.") }
-        function removePlayer() { if (game.players.length <= APP_CONFIG.minPlayers) return showMessage("A game needs at least 2 players."); const names = game.players.map((p, i) => `${i + 1}. ${p.name}`).join("\n"), response = prompt(`Enter player number to remove:\n\n${names}`); if (!response) return; const i = Number(response) - 1; if (i < 0 || i >= game.players.length) return showMessage("That player number is not valid."); const removed = game.players[i]; if (!confirm(`Remove ${removed.name} from this game?`)) return; game.players.splice(i, 1); for (const h of game.hands) delete h.scores[removed.id]; renderGame(); showMessage(`${removed.name} removed.`) }
-        function renamePlayer(id) { const p = game.players.find(x => x.id === id); if (!p) return; const name = prompt("Player name:", p.name); if (!name?.trim()) return; p.name = name.trim(); closeModal(); renderGame(); scheduleGameTimerStart(id) }
+        function addPlayer() { if (game.players.length >= APP_CONFIG.maxPlayers) return showMessage(`Maximum of ${APP_CONFIG.maxPlayers} players.`); const player = { id: createId(), name: `Player ${game.players.length + 1}` }; game.players.push(player); gameRepository.addPlayer(player, game.players.length - 1); renderGame(); openPlayerPicker(player.id); showMessage("Player column added.") }
+        function removePlayer() { if (game.players.length <= APP_CONFIG.minPlayers) return showMessage("A game needs at least 2 players."); const names = game.players.map((p, i) => `${i + 1}. ${p.name}`).join("\n"), response = prompt(`Enter player number to remove:\n\n${names}`); if (!response) return; const i = Number(response) - 1; if (i < 0 || i >= game.players.length) return showMessage("That player number is not valid."); const removed = game.players[i]; if (!confirm(`Remove ${removed.name} from this game?`)) return; game.players.splice(i, 1); gameRepository.deletePlayer(removed.id); game.players.forEach((p, index) => gameRepository.updatePlayer(p, index)); for (const h of game.hands) delete h.scores[removed.id]; renderGame(); showMessage(`${removed.name} removed.`) }
+        function renamePlayer(id) { const p = game.players.find(x => x.id === id); if (!p) return; const name = prompt("Player name:", p.name); if (!name?.trim()) return; p.name = name.trim(); gameRepository.updatePlayer(p, game.players.indexOf(p)); closeModal(); renderGame(); scheduleGameTimerStart(id) }
 
         function openModal(html) { modalCard.innerHTML = html; modalBackdrop.classList.remove("hidden"); modalBackdrop.setAttribute("aria-hidden", "false") }
         function closeModal() { modalBackdrop.classList.add("hidden"); modalBackdrop.setAttribute("aria-hidden", "true"); modalCard.innerHTML = "" }
-        function openPlayerListManager() {
-            const saved = playerRepository.load();
-            openModal(`<div class="modal-head"><h3>player list</h3><button class="close-btn" data-close-modal>×</button></div><div id="savedPlayerRows">${saved.length ? saved.map((name, i) => `<div class="saved-player"><span style="font-weight:700">${escapeHtml(name)}</span><button class="remove-saved" data-remove-saved="${i}" aria-label="Remove ${escapeHtml(name)}">×</button></div>`).join("") : '<div class="empty-state">No saved players yet.</div>'}</div><div class="player-list-add"><input id="newSavedPlayer" type="text" placeholder="new player name"><button id="saveNewPlayer">add</button></div>`);
+        async function openPlayerListManager() {
+            const saved = await playerRepository.load();
+            openModal(`<div class="modal-head"><h3>player list</h3><button class="close-btn" data-close-modal>×</button></div><div id="savedPlayerRows">${saved.length ? saved.map(player => `<div class="saved-player"><span style="font-weight:700">${escapeHtml(player.name)}</span><button class="remove-saved" data-remove-saved="${player.id}" aria-label="Remove ${escapeHtml(player.name)}">×</button></div>`).join("") : '<div class="empty-state">No saved players yet.</div>'}</div><div class="player-list-add"><input id="newSavedPlayer" type="text" placeholder="new player name"><button id="saveNewPlayer">add</button></div>`);
             modalCard.querySelector("[data-close-modal]").onclick = closeModal;
-            modalCard.querySelectorAll("[data-remove-saved]").forEach(b => b.onclick = () => { const list = playerRepository.load(); list.splice(Number(b.dataset.removeSaved), 1); playerRepository.save(list); openPlayerListManager() });
-            $("saveNewPlayer").onclick = () => { const input = $("newSavedPlayer"), name = input.value.trim(); if (!name) return; const list = playerRepository.load(); if (!list.some(x => x.toLowerCase() === name.toLowerCase())) list.push(name); playerRepository.save(list); openPlayerListManager() }
+            modalCard.querySelectorAll("[data-remove-saved]").forEach(b => b.onclick = async () => { await playerRepository.remove(b.dataset.removeSaved); await openPlayerListManager() });
+            $("saveNewPlayer").onclick = async () => { const input = $("newSavedPlayer"), name = input.value.trim(); if (!name) return; await playerRepository.add(name); await openPlayerListManager() }
         }
-        function openPlayerPicker(playerId) {
-            const player = game.players.find(p => p.id === playerId); if (!player) return; const saved = playerRepository.load();
-            openModal(`<div class="modal-head"><h3>choose player</h3><button class="close-btn" data-close-modal>×</button></div><div>${saved.length ? saved.map((name, i) => `<div class="saved-player"><button class="saved-player-name" data-pick-saved="${i}">${escapeHtml(name)}</button></div>`).join("") : '<div class="empty-state">No saved players yet.</div>'}</div><button class="manual-name" id="manualNameButton">edit name manually</button><button class="manual-name" id="managePlayersButton">manage player list</button>`);
+        async function openPlayerPicker(playerId) {
+            const player = game.players.find(p => p.id === playerId); if (!player) return; const saved = await playerRepository.load();
+            openModal(`<div class="modal-head"><h3>choose player</h3><button class="close-btn" data-close-modal>×</button></div><div>${saved.length ? saved.map(item => `<div class="saved-player"><button class="saved-player-name" data-pick-saved="${item.id}">${escapeHtml(item.name)}</button></div>`).join("") : '<div class="empty-state">No saved players yet.</div>'}</div><button class="manual-name" id="manualNameButton">edit name manually</button><button class="manual-name" id="managePlayersButton">manage player list</button>`);
             modalCard.querySelector("[data-close-modal]").onclick = closeModal;
-            modalCard.querySelectorAll("[data-pick-saved]").forEach(b => b.onclick = () => { const name = playerRepository.load()[Number(b.dataset.pickSaved)]; if (name) { player.name = name; closeModal(); renderGame(); scheduleGameTimerStart(playerId) } });
+            modalCard.querySelectorAll("[data-pick-saved]").forEach(b => b.onclick = () => { const selected = saved.find(item => item.id === b.dataset.pickSaved); if (selected) { player.name = selected.name; gameRepository.updatePlayer(player, game.players.indexOf(player)); closeModal(); renderGame(); scheduleGameTimerStart(playerId) } });
             $("manualNameButton").onclick = () => renamePlayer(playerId); $("managePlayersButton").onclick = openPlayerListManager
         }
         function escapeHtml(value) { return String(value).replace(/[&<>'"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" }[c])) }
@@ -2476,16 +2623,52 @@
 
         async function saveEndedGame(winnerId) {
             closeModal(); stopGameTimer(); game.hands = completedHands(); game.status = "finished"; game.finishedAt = new Date().toISOString(); game.updatedAt = game.finishedAt; game.winnerId = winnerId;
-            await gameRepository.archive(game); await gameRepository.deleteCurrentGame();
-            game = createNewGame(); ensureMinimumHands(); await gameRepository.save(game); renderGame(); await renderStats(); showPage("score"); showMessage("Game saved.")
+            await gameRepository.archive(game);
+            broadcastStatsChanged();
+            unsubscribeFromGame();
+            game = await gameRepository.create(); subscribeToGame(); renderGame(); await renderStats(); showPage("score"); showMessage("Game saved. New game created.")
         }
 
         async function deleteEndedGame() {
-            closeModal(); await gameRepository.deleteCurrentGame(); game = createNewGame(); ensureMinimumHands(); await gameRepository.save(game); renderGame(); showPage("score"); showMessage("Game deleted.")
+            closeModal(); await gameRepository.deleteCurrentGame(); unsubscribeFromGame(); game = await gameRepository.create(); subscribeToGame(); renderGame(); showPage("score"); showMessage("Game deleted.")
         }
 
-        async function deleteGame() { if (!confirm("Delete this game? This cannot be undone.")) return; await gameRepository.deleteCurrentGame(); game = createNewGame(); await gameRepository.save(game); renderGame(); showPage("score") }
-        function openSettings() { const value = prompt("Winning score:", game.winningScore); if (!value) return; const score = Number(value); if (!Number.isFinite(score) || score <= 0) return showMessage("Enter a valid winning score."); game.winningScore = score; showMessage(`Winning score set to ${score}.`) }
+        async function deleteGame() { if (!confirm("Delete this game? This cannot be undone.")) return; await gameRepository.deleteCurrentGame(); unsubscribeFromGame(); game = await gameRepository.create(); subscribeToGame(); renderGame(); showPage("score") }
+        function openSettings() { const value = prompt("Winning score:", game.winningScore); if (!value) return; const score = Number(value); if (!Number.isFinite(score) || score <= 0) return showMessage("Enter a valid winning score."); game.winningScore = score; gameRepository.save(game); showMessage(`Winning score set to ${score}.`) }
+        function joinGame() {
+            openModal(`<div class="modal-head"><h3>join game</h3><button class="close-btn" data-close-modal>×</button></div><input id="joinGameCode" class="join-code-input" type="text" inputmode="numeric" maxlength="5" placeholder="00000" autocomplete="off"><div id="joinCodeError" class="join-code-error"></div><button id="submitJoinCode" class="manual-name">JOIN GAME</button>`);
+            const input = $("joinGameCode");
+            const errorNotice = $("joinCodeError");
+            const submit = async () => {
+                const code = input.value.trim();
+                errorNotice.textContent = "";
+                if (!/^\d{5}$/.test(code)) {
+                    errorNotice.textContent = "Enter a valid 5-digit game code.";
+                    input.focus();
+                    return;
+                }
+                try {
+                    const joined = await gameRepository.join(code);
+                    if (!joined) throw new Error();
+                    unsubscribeFromGame();
+                    game = joined;
+                    normalizeGameTimer();
+                    ensureMinimumHands();
+                    subscribeToGame();
+                    closeModal();
+                    renderGame();
+                    showPage("score");
+                    showMessage(`Joined game ${game.gameCode}.`);
+                } catch {
+                    errorNotice.textContent = "Invalid game code. Check the number and try again.";
+                    input.focus();
+                }
+            };
+            modalCard.querySelector("[data-close-modal]").onclick = closeModal;
+            $("submitJoinCode").onclick = submit;
+            input.addEventListener("keydown", event => { if (event.key === "Enter") submit() });
+            requestAnimationFrame(() => input.focus());
+        }
         function toggleMenu() { gameMenu.classList.toggle("hidden") } function closeMenu() { gameMenu.classList.add("hidden") }
         async function handleMenuAction(e) {
             const b = e.target.closest("[data-action]");
@@ -2495,6 +2678,7 @@
             const a = b.dataset.action;
 
             if (a === "pause") await togglePauseGame();
+            else if (a === "join") await joinGame();
             else if (a === "players") openPlayerListManager();
             else if (a === "remove-player") removePlayer();
             else if (a === "theme") openThemePicker();
@@ -2620,9 +2804,14 @@
 
         async function deleteFinishedGame(gameId) {
             if (!confirm("Delete this game from history? This cannot be undone.")) return;
-            await gameRepository.deleteFinishedGame(gameId);
-            await renderStats();
-            showMessage("Game deleted from history.");
+            try {
+                await gameRepository.deleteFinishedGame(gameId);
+                await renderStats();
+                broadcastStatsChanged();
+                showMessage("Game deleted from history.");
+            } catch {
+                showMessage("This game could not be deleted.");
+            }
         }
 
         function toggleStatsGameDetail(row, gameId, games) {
@@ -2643,7 +2832,94 @@
         function formatDate(v) { if (!v) return "—"; return new Date(v).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" }) }
         function formatDateTime(v) { if (!v) return "—"; return new Date(v).toLocaleString(undefined, { month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit" }) }
         async function renderAll() { renderGame(); await renderStats() }
-        async function initializeApp() { applyTheme(themeRepository.load()); const saved = await gameRepository.loadCurrentGame(); game = saved && saved.status !== "finished" ? saved : createNewGame(); normalizeGameTimer(); ensureMinimumHands(); await renderAll(); showPage("score"); runGameTimerDisplay() }
+        let realtimeChannel = null, statsChannel = null, remoteRefreshTimer = null;
+        function subscribeToStatsUpdates() {
+            if (statsChannel) supabaseClient.removeChannel(statsChannel);
+            statsChannel = supabaseClient.channel("shared-stats-updates")
+                .on("broadcast", { event: "stats-changed" }, () => {
+                    if (currentPage === "stats") renderStats();
+                })
+                .subscribe();
+        }
+        function broadcastStatsChanged() {
+            if (statsChannel) statsChannel.send({ type: "broadcast", event: "stats-changed", payload: {} });
+        }
+        function unsubscribeFromGame() { if (realtimeChannel) supabaseClient.removeChannel(realtimeChannel); realtimeChannel = null }
+        function scheduleRemoteRefresh() {
+            clearTimeout(remoteRefreshTimer);
+            remoteRefreshTimer = setTimeout(async () => {
+                const fresh = await gameRepository.loadGame(game.id);
+                if (!fresh) return;
+                game = fresh; normalizeGameTimer(); ensureMinimumHands(); renderGame(); runGameTimerDisplay();
+                if (currentPage === "stats") await renderStats();
+            }, 250);
+        }
+        function applyRealtimeScore(payload) {
+            const row = payload.new?.hand_id ? payload.new : payload.old;
+            const hand = game.hands.find(h => h.id === row?.hand_id);
+            if (!hand || !game.players.some(p => p.id === row.player_id)) return;
+            if (payload.eventType === "DELETE") delete hand.scores[row.player_id];
+            else hand.scores[row.player_id] = payload.new.score;
+            const input = document.querySelector(`.score-cell[data-player-id="${row.player_id}"][data-hand-index="${game.hands.indexOf(hand)}"]`);
+            if (input && document.activeElement !== input) input.value = payload.eventType === "DELETE" ? "" : payload.new.score;
+            updateTotalsOnly();
+        }
+        function applyRealtimePlayer(payload) {
+            const row = payload.new?.id ? payload.new : payload.old;
+            if (!row) return;
+            const index = game.players.findIndex(player => player.id === row.id);
+            if (payload.eventType === "DELETE") {
+                if (index >= 0) game.players.splice(index, 1);
+            } else if (index >= 0) {
+                game.players[index].name = payload.new.name;
+                game.players[index].position = payload.new.position;
+            } else {
+                game.players.push({ id: payload.new.id, name: payload.new.name, position: payload.new.position });
+            }
+            game.players.sort((a, b) => (a.position ?? 0) - (b.position ?? 0));
+            renderGame();
+        }
+        function applyRealtimeGame(payload) {
+            if (payload.eventType === "DELETE") {
+                game.status = "finished";
+                stopGameTimer();
+                $("finishButton").textContent = "GAME ENDED & DELETED";
+                $("finishButton").disabled = true;
+                $("addPlayerButton").disabled = true;
+                document.querySelectorAll(".score-cell").forEach(input => input.disabled = true);
+                showMessage("This game was ended and deleted.");
+                return;
+            }
+            if (payload.new.status === "finished") {
+                scheduleRemoteRefresh();
+                showMessage("This game was ended and saved.");
+                return;
+            }
+            scheduleRemoteRefresh();
+        }
+        function refreshOpenSavedPlayerList() {
+            if ($("savedPlayerRows")) openPlayerListManager();
+        }
+        function subscribeToGame() {
+            unsubscribeFromGame();
+            realtimeChannel = supabaseClient.channel(`game-${game.id}`)
+                .on("postgres_changes", { event: "*", schema: "public", table: "games", filter: `id=eq.${game.id}` }, applyRealtimeGame)
+                .on("postgres_changes", { event: "*", schema: "public", table: "game_players", filter: `game_id=eq.${game.id}` }, applyRealtimePlayer)
+                .on("postgres_changes", { event: "*", schema: "public", table: "hands", filter: `game_id=eq.${game.id}` }, scheduleRemoteRefresh)
+                .on("postgres_changes", { event: "*", schema: "public", table: "scores" }, applyRealtimeScore)
+                .on("postgres_changes", { event: "*", schema: "public", table: "saved_players" }, refreshOpenSavedPlayerList)
+                .subscribe();
+        }
+        async function initializeApp() {
+            applyTheme(themeRepository.load());
+            const { data: sessionData } = await supabaseClient.auth.getSession();
+            if (!sessionData.session) { const { error } = await supabaseClient.auth.signInAnonymously(); if (error) throw error }
+            const saved = await gameRepository.loadCurrentGame();
+            const savedIsUsable = saved && saved.status !== "finished" && saved.players.length >= APP_CONFIG.minPlayers && saved.hands.length > 0;
+            if (!savedIsUsable) localStorage.removeItem("ginRummyJoinedGameId");
+            game = savedIsUsable ? saved : await gameRepository.create();
+            normalizeGameTimer(); ensureMinimumHands(); subscribeToGame(); subscribeToStatsUpdates(); await renderAll(); showPage("score"); runGameTimerDisplay();
+        }
 
         menuButton.addEventListener("click", e => { e.stopPropagation(); toggleMenu() });
         gameMenu.addEventListener("click", handleMenuAction);
