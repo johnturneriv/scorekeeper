@@ -214,8 +214,25 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
-            gap: 12px;
             margin: 5px 2px 14px
+        }
+
+        .heading-actions {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .game-timer {
+            border: 0;
+            padding: 7px 4px;
+            background: transparent;
+            color: var(--navy);
+            font-size: 11px;
+            font-weight: 800;
+            letter-spacing: .04em;
+            white-space: nowrap;
+            cursor: pointer;
         }
 
         .wager-display {
@@ -730,6 +747,33 @@
             font-weight: 800
         }
 
+        .stats-name-button,
+        .stats-delete-button {
+            border: 0;
+            background: transparent;
+            font: inherit;
+            font-weight: 800;
+            cursor: pointer;
+        }
+
+        .stats-name-button {
+            padding: 4px 0;
+            color: var(--red);
+            text-align: left;
+        }
+
+        .stats-delete-button {
+            padding: 6px 8px;
+            color: var(--red);
+        }
+
+        .stats-detail-summary {
+            display: grid;
+            gap: 5px;
+            margin: 10px 0 14px;
+            font-size: 12px;
+        }
+
         .record {
             margin-top: 16px;
             padding: 14px 18px;
@@ -846,6 +890,10 @@
             background: #0d2945;
             color: #f7ecd3;
             border: 1px solid #b58a3a;
+        }
+
+        body[data-theme="classic"] .game-timer {
+            color: #0d2945;
         }
 
         /* BOTTOM BUTTONS */
@@ -1176,6 +1224,10 @@
             color: #123d31;
         }
 
+        body[data-theme="poker"] .game-timer {
+            color: #f8f0dc;
+        }
+
         body[data-theme="tropical"] {
             --bg: #357187;
             --card: #e4f3f0;
@@ -1378,6 +1430,10 @@
 
         body[data-theme="tropical"] .total-cell {
             border-left: 1px solid rgba(244, 200, 78, .35);
+        }
+
+        body[data-theme="tropical"] .game-timer {
+            color: #064f50;
         }
 
         /* SCORE ENTRY */
@@ -1631,7 +1687,11 @@
         <section id="scorePage" class="page active">
             <div class="page-heading">
                 <span id="gameStatus" class="eyebrow">scorecard</span>
-                <button id="wagerDisplay" class="wager-display" type="button">+ ADD WAGER</button>
+                <div class="heading-actions">
+                    <button id="gameTimer" class="game-timer" type="button"
+                        aria-label="Restart or resume game timer">0:00</button>
+                    <button id="wagerDisplay" class="wager-display" type="button">+ ADD WAGER</button>
+                </div>
             </div>
             <section class="card scorecard-wrapper">
                 <div class="score-horizontal-scroll">
@@ -1687,6 +1747,11 @@
                 winnerId: null,
                 currentLeaderId: null,
                 dealerId: players[0].id,
+                timer: {
+                    elapsedMs: 0,
+                    startedAt: null,
+                    running: false
+                },
                 wager: {
                     amount: null,
                     type: "game"
@@ -1702,12 +1767,17 @@
             async loadCurrentGame() { try { return JSON.parse(localStorage.getItem("ginRummyCurrentGame")) } catch { return null } },
             async loadFinishedGames() { try { return JSON.parse(localStorage.getItem("ginRummyFinishedGames") || "[]") } catch { return [] } },
             async archive(g) { const a = await this.loadFinishedGames(); a.push(g); localStorage.setItem("ginRummyFinishedGames", JSON.stringify(a)) },
+            async deleteFinishedGame(gameId) { const games = await this.loadFinishedGames(); localStorage.setItem("ginRummyFinishedGames", JSON.stringify(games.filter(g => g.id !== gameId))) },
             async deleteCurrentGame() { localStorage.removeItem("ginRummyCurrentGame") }
         };
         /* Saved-player persistence uses the same replaceable repository pattern. */
         const playerRepository = {
             load() { try { const saved = JSON.parse(localStorage.getItem("ginRummySavedPlayers") || "null"); return Array.isArray(saved) ? saved : DEFAULT_SAVED_PLAYERS.slice() } catch { return DEFAULT_SAVED_PLAYERS.slice() } },
             save(players) { localStorage.setItem("ginRummySavedPlayers", JSON.stringify(players)) }
+        };
+        const hiddenStatsPlayerRepository = {
+            load() { try { const hidden = JSON.parse(localStorage.getItem("ginRummyHiddenStatsPlayers") || "[]"); return Array.isArray(hidden) ? hidden : [] } catch { return [] } },
+            hide(name) { const hidden = this.load(); const key = String(name).trim().toLowerCase(); if (!hidden.includes(key)) hidden.push(key); localStorage.setItem("ginRummyHiddenStatsPlayers", JSON.stringify(hidden)) }
         };
         const themeRepository = {
             load() { return localStorage.getItem("ginRummyTheme") || "classic" },
@@ -1738,7 +1808,7 @@
             })
         }
 
-        let game = null, newRowTimer = null, currentPage = "score";
+        let game = null, newRowTimer = null, gameTimerInterval = null, gameTimerStartDelay = null, currentPage = "score";
         const $ = id => document.getElementById(id);
         const scorecardElement = $("scorecard"), menuButton = $("menuButton"), gameMenu = $("gameMenu"), gameStatusElement = $("gameStatus"), messageElement = $("message"), modalBackdrop = $("modalBackdrop"), modalCard = $("modalCard");
 
@@ -1749,6 +1819,75 @@
         function determineLeader() { const totals = getTotals(); let leader = null, high = -Infinity; for (const p of game.players) { if (totals[p.id] > high) { high = totals[p.id]; leader = p } } game.currentLeaderId = leader?.id || null; return leader }
         function determineWinner() { const activeHands = game.hands.filter(h => Object.keys(h.scores).some(id => h.scores[id] !== undefined && h.scores[id] !== null && h.scores[id] !== "")); if (!activeHands.length || !isHandComplete(activeHands[activeHands.length - 1])) return null; const leader = determineLeader(); return leader && getPlayerTotal(leader.id) >= game.winningScore ? leader : null }
         function ensureMinimumHands() { while (game.hands.length < APP_CONFIG.initialVisibleHands) game.hands.push(createEmptyHand()) }
+
+        function normalizeGameTimer() {
+            if (!game.timer) game.timer = { elapsedMs: 0, startedAt: null, running: false };
+            game.timer.elapsedMs = Number(game.timer.elapsedMs) || 0;
+            if (!game.timer.running) game.timer.startedAt = null;
+        }
+
+        function getGameElapsedMs() {
+            normalizeGameTimer();
+            const activeMs = game.timer.running && game.timer.startedAt
+                ? Math.max(0, Date.now() - new Date(game.timer.startedAt).getTime())
+                : 0;
+            return game.timer.elapsedMs + activeMs;
+        }
+
+        function formatGameDuration(milliseconds) {
+            const totalSeconds = Math.max(0, Math.floor((Number(milliseconds) || 0) / 1000));
+            const hours = Math.floor(totalSeconds / 3600);
+            const minutes = Math.floor((totalSeconds % 3600) / 60);
+            const seconds = totalSeconds % 60;
+            return hours > 0
+                ? `${hours}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`
+                : `${minutes}:${String(seconds).padStart(2, "0")}`;
+        }
+
+        function renderGameTimer() {
+            const timer = $("gameTimer");
+            if (timer) timer.textContent = formatGameDuration(getGameElapsedMs());
+        }
+
+        function runGameTimerDisplay() {
+            clearInterval(gameTimerInterval);
+            renderGameTimer();
+            if (game.timer.running) gameTimerInterval = setInterval(renderGameTimer, 250);
+        }
+
+        async function startGameTimer() {
+            normalizeGameTimer();
+            if (game.timer.running || game.status === "finished") return;
+            game.status = "active";
+            game.timer.running = true;
+            game.timer.startedAt = new Date().toISOString();
+            runGameTimerDisplay();
+            game = await gameRepository.save(game);
+        }
+
+        function scheduleGameTimerStart(playerId) {
+            const lastPlayer = game.players[game.players.length - 1];
+            if (!lastPlayer || playerId !== lastPlayer.id || game.timer?.running || getGameElapsedMs() > 0) return;
+            clearTimeout(gameTimerStartDelay);
+            gameTimerStartDelay = setTimeout(startGameTimer, 1500);
+        }
+
+        function stopGameTimer() {
+            clearTimeout(gameTimerStartDelay);
+            normalizeGameTimer();
+            if (game.timer.running) game.timer.elapsedMs = getGameElapsedMs();
+            game.timer.running = false;
+            game.timer.startedAt = null;
+            clearInterval(gameTimerInterval);
+            renderGameTimer();
+        }
+
+        async function restartOrResumeGameTimer() {
+            normalizeGameTimer();
+            if (game.status !== "paused") game.timer.elapsedMs = 0;
+            await startGameTimer();
+            renderGameStatus();
+        }
         function renderGame() {
             ensureMinimumHands();
 
@@ -1762,7 +1901,7 @@
             renderPlayerHeaders();
             const rows = document.createElement("div"); rows.className = "score-scroll-area";
             renderHands(rows); scorecardElement.appendChild(rows);
-            renderTotals(); renderGameStatus();
+            renderTotals(); renderGameStatus(); renderGameTimer();
             requestAnimationFrame(fitPlayerNames);
         }
 
@@ -1956,6 +2095,13 @@
         function renderGameStatus() {
             gameStatusElement.textContent = "scorecard";
 
+            const pauseMenuButton = gameMenu.querySelector('[data-action="pause"]');
+            if (pauseMenuButton) {
+                pauseMenuButton.textContent = game.status === "paused"
+                    ? "Resume Game"
+                    : "Save & Pause Game";
+            }
+
             const wagerDisplay = $("wagerDisplay");
             if (!wagerDisplay) return;
 
@@ -2129,7 +2275,7 @@
 
         function addPlayer() { if (game.players.length >= APP_CONFIG.maxPlayers) return showMessage(`Maximum of ${APP_CONFIG.maxPlayers} players.`); game.players.push({ id: createId(), name: `Player ${game.players.length + 1}` }); for (const h of game.hands) delete h.scores[game.players[game.players.length - 1].id]; renderGame(); openPlayerPicker(game.players[game.players.length - 1].id); showMessage("Player column added.") }
         function removePlayer() { if (game.players.length <= APP_CONFIG.minPlayers) return showMessage("A game needs at least 2 players."); const names = game.players.map((p, i) => `${i + 1}. ${p.name}`).join("\n"), response = prompt(`Enter player number to remove:\n\n${names}`); if (!response) return; const i = Number(response) - 1; if (i < 0 || i >= game.players.length) return showMessage("That player number is not valid."); const removed = game.players[i]; if (!confirm(`Remove ${removed.name} from this game?`)) return; game.players.splice(i, 1); for (const h of game.hands) delete h.scores[removed.id]; renderGame(); showMessage(`${removed.name} removed.`) }
-        function renamePlayer(id) { const p = game.players.find(x => x.id === id); if (!p) return; const name = prompt("Player name:", p.name); if (!name?.trim()) return; p.name = name.trim(); closeModal(); renderGame() }
+        function renamePlayer(id) { const p = game.players.find(x => x.id === id); if (!p) return; const name = prompt("Player name:", p.name); if (!name?.trim()) return; p.name = name.trim(); closeModal(); renderGame(); scheduleGameTimerStart(id) }
 
         function openModal(html) { modalCard.innerHTML = html; modalBackdrop.classList.remove("hidden"); modalBackdrop.setAttribute("aria-hidden", "false") }
         function closeModal() { modalBackdrop.classList.add("hidden"); modalBackdrop.setAttribute("aria-hidden", "true"); modalCard.innerHTML = "" }
@@ -2144,12 +2290,20 @@
             const player = game.players.find(p => p.id === playerId); if (!player) return; const saved = playerRepository.load();
             openModal(`<div class="modal-head"><h3>choose player</h3><button class="close-btn" data-close-modal>×</button></div><div>${saved.length ? saved.map((name, i) => `<div class="saved-player"><button class="saved-player-name" data-pick-saved="${i}">${escapeHtml(name)}</button></div>`).join("") : '<div class="empty-state">No saved players yet.</div>'}</div><button class="manual-name" id="manualNameButton">edit name manually</button><button class="manual-name" id="managePlayersButton">manage player list</button>`);
             modalCard.querySelector("[data-close-modal]").onclick = closeModal;
-            modalCard.querySelectorAll("[data-pick-saved]").forEach(b => b.onclick = () => { const name = playerRepository.load()[Number(b.dataset.pickSaved)]; if (name) { player.name = name; closeModal(); renderGame() } });
+            modalCard.querySelectorAll("[data-pick-saved]").forEach(b => b.onclick = () => { const name = playerRepository.load()[Number(b.dataset.pickSaved)]; if (name) { player.name = name; closeModal(); renderGame(); scheduleGameTimerStart(playerId) } });
             $("manualNameButton").onclick = () => renamePlayer(playerId); $("managePlayersButton").onclick = openPlayerListManager
         }
         function escapeHtml(value) { return String(value).replace(/[&<>'"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" }[c])) }
 
-        async function pauseGame() {
+        async function togglePauseGame() {
+            if (game.status === "paused") {
+                await startGameTimer();
+                renderGameStatus();
+                showMessage("Game resumed.");
+                return;
+            }
+
+            stopGameTimer();
             game.status = "paused";
             game = await gameRepository.save(game);
             renderGameStatus();
@@ -2312,6 +2466,7 @@
 
         function finishGame() {
             if (completedHands().length === 0) return showMessage("Enter at least one complete hand first.");
+            stopGameTimer();
             const leader = determineLeader();
             openModal(`<div class="modal-head"><h3>end game?</h3><button class="close-btn" data-close-modal>×</button></div><div class="muted" style="line-height:1.5;margin-bottom:14px">Choose whether to save this game to game history or delete it.</div><button class="manual-name" id="saveEndedGame">save game</button><button class="manual-name" id="deleteEndedGame" style="color:var(--red);border-color:var(--red)">delete game</button>`);
             modalCard.querySelector("[data-close-modal]").onclick = closeModal;
@@ -2320,7 +2475,7 @@
         }
 
         async function saveEndedGame(winnerId) {
-            closeModal(); game.hands = completedHands(); game.status = "finished"; game.finishedAt = new Date().toISOString(); game.updatedAt = game.finishedAt; game.winnerId = winnerId;
+            closeModal(); stopGameTimer(); game.hands = completedHands(); game.status = "finished"; game.finishedAt = new Date().toISOString(); game.updatedAt = game.finishedAt; game.winnerId = winnerId;
             await gameRepository.archive(game); await gameRepository.deleteCurrentGame();
             game = createNewGame(); ensureMinimumHands(); await gameRepository.save(game); renderGame(); await renderStats(); showPage("score"); showMessage("Game saved.")
         }
@@ -2339,7 +2494,7 @@
             closeMenu();
             const a = b.dataset.action;
 
-            if (a === "pause") await pauseGame();
+            if (a === "pause") await togglePauseGame();
             else if (a === "players") openPlayerListManager();
             else if (a === "remove-player") removePlayer();
             else if (a === "theme") openThemePicker();
@@ -2349,7 +2504,86 @@
         function showMessage(m) { messageElement.textContent = m; clearTimeout(showMessage.timeout); showMessage.timeout = setTimeout(() => messageElement.textContent = "", 2500) }
 
         function showPage(page) { currentPage = page; document.querySelectorAll(".page").forEach(x => x.classList.remove("active")); $(`${page}Page`).classList.add("active"); document.querySelectorAll(".nav-btn").forEach(x => x.classList.toggle("active", x.dataset.page === page)); if (page === "score") renderGame(); if (page === "stats") renderStats(); window.scrollTo(0, 0) }
-        async function buildStats() { const games = await gameRepository.loadFinishedGames(), map = new Map(); let high = { score: null, name: "" }, low = { score: null, name: "" }; for (const g of games) { const totals = {}; for (const p of g.players) { totals[p.id] = g.hands.reduce((t, h) => t + Number(h.scores[p.id] || 0), 0); if (!map.has(p.name)) map.set(p.name, { name: p.name, games: 0, wins: 0, points: 0 }); const s = map.get(p.name); s.games++; s.points += totals[p.id]; if (p.id === g.winnerId) s.wins++; for (const h of g.hands) { const v = h.scores[p.id]; if (v !== undefined) { if (high.score === null || Number(v) > high.score) high = { score: Number(v), name: p.name }; if (low.score === null || Number(v) < low.score) low = { score: Number(v), name: p.name } } } } } return { games, players: [...map.values()].sort((a, b) => b.wins - a.wins), high, low } }
+        function getArchivedGameSettlement(g) {
+            const balances = Object.fromEntries(g.players.map(p => [p.id, 0]));
+            const amount = Number(g.wager?.amount) || 0;
+            if (amount <= 0) return { balances, winnerProceeds: 0 };
+
+            if (g.wager.type === "hand") {
+                for (const hand of g.hands) {
+                    if (!g.players.every(p => hand.scores[p.id] !== undefined && hand.scores[p.id] !== null && hand.scores[p.id] !== "")) continue;
+                    const high = Math.max(...g.players.map(p => Number(hand.scores[p.id])));
+                    const winners = g.players.filter(p => Number(hand.scores[p.id]) === high);
+                    if (winners.length !== 1) continue;
+                    for (const player of g.players) {
+                        if (player.id === winners[0].id) continue;
+                        balances[winners[0].id] += amount;
+                        balances[player.id] -= amount;
+                    }
+                }
+            } else {
+                const winner = g.players.find(p => p.id === g.winnerId);
+                if (winner) {
+                    for (const player of g.players) {
+                        if (player.id === winner.id) continue;
+                        balances[winner.id] += amount;
+                        balances[player.id] -= amount;
+                    }
+                }
+            }
+
+            return {
+                balances,
+                winnerProceeds: balances[g.winnerId] || 0
+            };
+        }
+
+        function formatMoney(value) {
+            const amount = Number(value) || 0;
+            return `${amount > 0 ? "+" : amount < 0 ? "−" : ""}$${Math.abs(amount)}`;
+        }
+
+        function formatArchivedWager(g) {
+            const amount = Number(g.wager?.amount) || 0;
+            if (amount <= 0) return "No wager";
+            return `$${amount} ${g.wager.type === "hand" ? "per hand" : "per game"}`;
+        }
+
+        async function buildStats() {
+            const games = await gameRepository.loadFinishedGames();
+            const hidden = new Set(hiddenStatsPlayerRepository.load());
+            const map = new Map();
+            let high = { score: null, name: "" }, low = { score: null, name: "" };
+
+            for (const g of games) {
+                const totals = {};
+                const settlement = getArchivedGameSettlement(g);
+                for (const p of g.players) {
+                    totals[p.id] = g.hands.reduce((t, h) => t + Number(h.scores[p.id] || 0), 0);
+                    const key = p.name.trim().toLowerCase();
+                    if (!map.has(key)) map.set(key, { name: p.name, games: 0, wins: 0, points: 0, netWinnings: 0 });
+                    const stats = map.get(key);
+                    stats.games++;
+                    stats.points += totals[p.id];
+                    stats.netWinnings += settlement.balances[p.id] || 0;
+                    if (p.id === g.winnerId) stats.wins++;
+                    for (const h of g.hands) {
+                        const value = h.scores[p.id];
+                        if (value !== undefined) {
+                            if (high.score === null || Number(value) > high.score) high = { score: Number(value), name: p.name };
+                            if (low.score === null || Number(value) < low.score) low = { score: Number(value), name: p.name };
+                        }
+                    }
+                }
+            }
+
+            return {
+                games,
+                players: [...map.entries()].filter(([key]) => !hidden.has(key)).map(([, value]) => value).sort((a, b) => b.wins - a.wins),
+                high,
+                low
+            };
+        }
         let currentStatsTab = "overview";
         async function renderStats() {
             const s = await buildStats();
@@ -2357,15 +2591,38 @@
             if (currentStatsTab === "player") return renderStatsByPlayer(s);
             if (currentStatsTab === "game") return renderStatsByGame(s);
             const top = s.players[0];
-            $("statsOverview").innerHTML = `<div class="stats-grid"><div class="card metric"><label>TOTAL GAMES</label><strong>${s.games.length}</strong><small>played</small></div><div class="card metric"><label>TOP PLAYER</label><strong class="red">${top?.name || "—"}</strong><small>${top ? `${top.wins} wins` : "no games yet"}</small></div><div class="card metric"><label>LOWEST HAND</label><strong>${s.low.score ?? "—"}</strong><small>${s.low.name ? `by ${escapeHtml(s.low.name)}` : "—"}</small></div><div class="card metric"><label>HIGHEST HAND</label><strong class="red">${s.high.score ?? "—"}</strong><small>${s.high.name ? `by ${escapeHtml(s.high.name)}` : "—"}</small></div></div><div class="card player-summary"><div class="section-title" style="margin-bottom:8px">player summary</div><table class="summary-table"><thead><tr><th>player</th><th>games</th><th>wins</th><th>win %</th><th>avg/game</th><th>total pts</th></tr></thead><tbody>${s.players.length ? s.players.map(p => `<tr><td>${escapeHtml(p.name)}</td><td>${p.games}</td><td>${p.wins}</td><td>${Math.round(p.wins / p.games * 100)}%</td><td>${(p.points / p.games).toFixed(1)}</td><td>${p.points}</td></tr>`).join("") : '<tr><td colspan="6">No finished games yet.</td></tr>'}</tbody></table></div>`
+            $("statsOverview").innerHTML = `<div class="stats-grid"><div class="card metric"><label>TOTAL GAMES</label><strong>${s.games.length}</strong><small>played</small></div><div class="card metric"><label>TOP PLAYER</label><strong class="red">${top?.name || "—"}</strong><small>${top ? `${top.wins} wins` : "no games yet"}</small></div><div class="card metric"><label>LOWEST HAND</label><strong>${s.low.score ?? "—"}</strong><small>${s.low.name ? `by ${escapeHtml(s.low.name)}` : "—"}</small></div><div class="card metric"><label>HIGHEST HAND</label><strong class="red">${s.high.score ?? "—"}</strong><small>${s.high.name ? `by ${escapeHtml(s.high.name)}` : "—"}</small></div></div><div class="card player-summary"><div class="section-title" style="margin-bottom:8px">player summary</div><table class="summary-table"><thead><tr><th>player</th><th>games</th><th>wins</th><th>win %</th><th>net winnings</th></tr></thead><tbody>${s.players.length ? s.players.map(p => `<tr><td><button class="stats-name-button" data-stats-player="${escapeHtml(p.name)}">${escapeHtml(p.name)}</button></td><td>${p.games}</td><td>${p.wins}</td><td>${Math.round(p.wins / p.games * 100)}%</td><td>${formatMoney(p.netWinnings)}</td></tr>`).join("") : '<tr><td colspan="5">No finished games yet.</td></tr>'}</tbody></table></div>`;
+            $("statsOverview").querySelectorAll("[data-stats-player]").forEach(button => button.onclick = () => showPlayerWinnings(button.dataset.statsPlayer, s));
         }
         function renderStatsByPlayer(s) {
-            $("statsOverview").innerHTML = `<div class="card player-summary"><div class="section-title" style="margin-bottom:8px">by player</div><table class="summary-table"><thead><tr><th>player</th><th>games</th><th>wins</th><th>win %</th><th>avg/game</th><th>total pts</th></tr></thead><tbody>${s.players.length ? s.players.map(p => `<tr><td>${escapeHtml(p.name)}</td><td>${p.games}</td><td>${p.wins}</td><td>${Math.round(p.wins / p.games * 100)}%</td><td>${(p.points / p.games).toFixed(1)}</td><td>${p.points}</td></tr>`).join("") : '<tr><td colspan="6">No finished games yet.</td></tr>'}</tbody></table></div>`
+            $("statsOverview").innerHTML = `<div class="card player-summary"><div class="section-title" style="margin-bottom:8px">by player</div><table class="summary-table"><thead><tr><th>player</th><th>games</th><th>wins</th><th>win %</th><th>net winnings</th><th></th></tr></thead><tbody>${s.players.length ? s.players.map(p => `<tr><td><button class="stats-name-button" data-stats-player="${escapeHtml(p.name)}">${escapeHtml(p.name)}</button></td><td>${p.games}</td><td>${p.wins}</td><td>${Math.round(p.wins / p.games * 100)}%</td><td>${formatMoney(p.netWinnings)}</td><td><button class="stats-delete-button" data-hide-stats-player="${escapeHtml(p.name)}" aria-label="Hide ${escapeHtml(p.name)} from stats">✕</button></td></tr>`).join("") : '<tr><td colspan="6">No players to show.</td></tr>'}</tbody></table></div>`;
+            $("statsOverview").querySelectorAll("[data-stats-player]").forEach(button => button.onclick = () => showPlayerWinnings(button.dataset.statsPlayer, s));
+            $("statsOverview").querySelectorAll("[data-hide-stats-player]").forEach(button => button.onclick = () => hideStatsPlayer(button.dataset.hideStatsPlayer));
         }
         function renderStatsByGame(s) {
             const games = s.games.slice().sort((a, b) => new Date(b.finishedAt || b.updatedAt) - new Date(a.finishedAt || a.updatedAt));
-            $("statsOverview").innerHTML = `<div class="card player-summary"><div class="section-title" style="margin-bottom:8px">by game</div><table class="summary-table"><thead><tr><th>date</th><th>winner</th><th>score</th><th>hands</th></tr></thead><tbody>${games.length ? games.map(g => { const w = g.players.find(p => p.id === g.winnerId); const score = w ? g.hands.reduce((t, h) => t + Number(h.scores[w.id] || 0), 0) : 0; return `<tr class="stats-game-row" data-stats-game-id="${g.id}" style="cursor:pointer"><td>${formatDate(g.finishedAt || g.updatedAt)}</td><td>${escapeHtml(w?.name || "—")}</td><td>${score}</td><td>${g.hands.length}</td></tr>` }).join("") : '<tr><td colspan="4">No finished games yet.</td></tr>'}</tbody></table></div>`;
+            $("statsOverview").innerHTML = `<div class="card player-summary"><div class="section-title" style="margin-bottom:8px">by game</div><table class="summary-table"><thead><tr><th>date</th><th>winner</th><th>wager</th><th>time</th></tr></thead><tbody>${games.length ? games.map(g => { const w = g.players.find(p => p.id === g.winnerId); return `<tr class="stats-game-row" data-stats-game-id="${g.id}" style="cursor:pointer"><td>${formatDate(g.finishedAt || g.updatedAt)}</td><td>${escapeHtml(w?.name || "—")}</td><td>${formatArchivedWager(g)}</td><td>${formatGameDuration(g.timer?.elapsedMs || 0)}</td></tr>` }).join("") : '<tr><td colspan="4">No finished games yet.</td></tr>'}</tbody></table></div>`;
             $("statsOverview").querySelectorAll("[data-stats-game-id]").forEach(row => row.onclick = () => toggleStatsGameDetail(row, row.dataset.statsGameId, games))
+        }
+
+        function showPlayerWinnings(name, stats) {
+            const player = stats.players.find(p => p.name === name);
+            if (!player) return;
+            openModal(`<div class="modal-head"><h3>${escapeHtml(player.name)}</h3><button class="close-btn" data-close-modal>×</button></div><div class="winner-money"><div class="winner-money-label">total net winnings</div><div class="winner-money-total">${formatMoney(player.netWinnings)}</div></div><div class="muted" style="text-align:center;margin-top:12px">${player.wins} wins in ${player.games} games</div>`);
+            modalCard.querySelector("[data-close-modal]").onclick = closeModal;
+        }
+
+        async function hideStatsPlayer(name) {
+            if (!confirm(`Hide ${name} from player statistics? Their old games will remain.`)) return;
+            hiddenStatsPlayerRepository.hide(name);
+            await renderStats();
+        }
+
+        async function deleteFinishedGame(gameId) {
+            if (!confirm("Delete this game from history? This cannot be undone.")) return;
+            await gameRepository.deleteFinishedGame(gameId);
+            await renderStats();
+            showMessage("Game deleted from history.");
         }
 
         function toggleStatsGameDetail(row, gameId, games) {
@@ -2375,22 +2632,25 @@
             const g = games.find(x => x.id === gameId); if (!g) return;
             const winner = g.players.find(p => p.id === g.winnerId);
             const totals = Object.fromEntries(g.players.map(p => [p.id, g.hands.reduce((t, h) => t + Number(h.scores[p.id] || 0), 0)]));
+            const settlement = getArchivedGameSettlement(g);
             const detail = document.createElement("tr");
             detail.className = "stats-game-detail-row";
-            detail.innerHTML = `<td colspan="4"><div class="inline-game-detail"><div class="inline-game-meta"><span>${formatDateTime(g.finishedAt || g.updatedAt)}</span><span>${escapeHtml(winner?.name || "—")} won</span></div><div class="inline-score-wrap"><table class="inline-score-table"><thead><tr><th>#</th>${g.players.map(p => `<th class="${p.id === g.winnerId ? "winner-col" : ""}">${escapeHtml(p.name)}</th>`).join("")}</tr></thead><tbody>${g.hands.map((h, i) => `<tr><td>${i + 1}</td>${g.players.map(p => `<td class="${p.id === g.winnerId ? "winner-col" : ""}">${h.scores[p.id] ?? "—"}</td>`).join("")}</tr>`).join("")}<tr><td>Σ</td>${g.players.map(p => `<td class="${p.id === g.winnerId ? "winner-col" : ""}"><strong>${totals[p.id]}</strong></td>`).join("")}</tr></tbody></table></div></div></td>`;
+            detail.innerHTML = `<td colspan="4"><div class="inline-game-detail"><div class="inline-game-meta"><span>${formatDateTime(g.finishedAt || g.updatedAt)}</span><span>${formatGameDuration(g.timer?.elapsedMs || 0)}</span></div><div class="stats-detail-summary"><strong>${escapeHtml(winner?.name || "—")} won</strong><span>Wager: ${formatArchivedWager(g)}</span><span>Winner's proceeds: ${formatMoney(settlement.winnerProceeds)}</span></div><div class="inline-score-wrap"><table class="inline-score-table"><thead><tr><th>#</th>${g.players.map(p => `<th class="${p.id === g.winnerId ? "winner-col" : ""}">${escapeHtml(p.name)}</th>`).join("")}</tr></thead><tbody>${g.hands.map((h, i) => `<tr><td>${i + 1}</td>${g.players.map(p => `<td class="${p.id === g.winnerId ? "winner-col" : ""}">${h.scores[p.id] ?? "—"}</td>`).join("")}</tr>`).join("")}<tr><td>Σ</td>${g.players.map(p => `<td class="${p.id === g.winnerId ? "winner-col" : ""}"><strong>${totals[p.id]}</strong></td>`).join("")}</tr></tbody></table></div><button class="manual-name" data-delete-finished-game="${g.id}" style="color:var(--red);border-color:var(--red);margin-top:14px">delete game</button></div></td>`;
             row.insertAdjacentElement("afterend", detail)
+            detail.querySelector("[data-delete-finished-game]").onclick = event => { event.stopPropagation(); deleteFinishedGame(gameId) }
         }
 
         function formatDate(v) { if (!v) return "—"; return new Date(v).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" }) }
         function formatDateTime(v) { if (!v) return "—"; return new Date(v).toLocaleString(undefined, { month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit" }) }
         async function renderAll() { renderGame(); await renderStats() }
-        async function initializeApp() { applyTheme(themeRepository.load()); const saved = await gameRepository.loadCurrentGame(); game = saved && saved.status !== "finished" ? saved : createNewGame(); ensureMinimumHands(); await renderAll(); showPage("score") }
+        async function initializeApp() { applyTheme(themeRepository.load()); const saved = await gameRepository.loadCurrentGame(); game = saved && saved.status !== "finished" ? saved : createNewGame(); normalizeGameTimer(); ensureMinimumHands(); await renderAll(); showPage("score"); runGameTimerDisplay() }
 
         menuButton.addEventListener("click", e => { e.stopPropagation(); toggleMenu() });
         gameMenu.addEventListener("click", handleMenuAction);
         document.addEventListener("click", e => { if (!gameMenu.contains(e.target) && e.target !== menuButton) closeMenu() });
         modalBackdrop.addEventListener("click", e => { if (e.target === modalBackdrop) closeModal() });
         $("finishButton").onclick = finishGame;
+        $("gameTimer").onclick = restartOrResumeGameTimer;
         $("addPlayerButton").onclick = addPlayer;
         document.querySelectorAll("[data-page]").forEach(b => b.addEventListener("click", () => showPage(b.dataset.page)));
         document.querySelectorAll("[data-stats-tab]").forEach(b => b.addEventListener("click", () => { currentStatsTab = b.dataset.statsTab; renderStats() }));
