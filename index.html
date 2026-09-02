@@ -477,6 +477,12 @@
             font-weight: 800
         }
 
+        .round-head {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
         .player-header {
             border-left: 1px solid var(--line);
             min-width: 0;
@@ -1794,8 +1800,8 @@
         function createNewGame() {
             const now = new Date().toISOString();
             const players = [
-                { id: createId(), name: "Player 1" },
-                { id: createId(), name: "Player 2" }
+                { id: createId(), name: "Add Name" },
+                { id: createId(), name: "Add Name" }
             ];
 
             return {
@@ -1883,7 +1889,7 @@
                 return {
                     id: g.id, gameCode: g.game_code, status: g.status,
                     createdAt: g.created_at, updatedAt: g.updated_at, finishedAt: g.finished_at,
-                    winningScore: g.winning_score, players: players.map(p => ({ id: p.id, name: p.name })),
+                    winningScore: g.winning_score, players: players.map(p => ({ id: p.id, name: /^player \d+$/i.test(p.name.trim()) ? "Add Name" : p.name })),
                     hands: hands.map(h => ({ id: h.id, scores: Object.fromEntries(scores.filter(s => s.hand_id === h.id).map(s => [s.player_id, s.score])) })),
                     winnerId: g.winner_player_id, currentLeaderId: null, dealerId: g.dealer_player_id,
                     timer: { elapsedMs: Number(g.timer_elapsed_ms) || 0, startedAt: g.timer_started_at, running: g.status === "active" && !!g.timer_started_at },
@@ -1972,6 +1978,7 @@
         function getPlayerTotal(playerId) { return game.hands.reduce((t, h) => { const v = h.scores[playerId]; return v === undefined || v === null || v === "" ? t : t + Number(v) }, 0) }
         function getTotals() { return Object.fromEntries(game.players.map(p => [p.id, getPlayerTotal(p.id)])) }
         function isHandComplete(hand) { return game.players.every(p => hand.scores[p.id] !== undefined && hand.scores[p.id] !== null && hand.scores[p.id] !== "") }
+        function isPlayerNamed(player) { return !!player && player.name.trim().toLowerCase() !== "add name" && !/^player \d+$/i.test(player.name.trim()) }
         function completedHands() { return game.hands.filter(isHandComplete) }
         function determineLeader() { const totals = getTotals(); let leader = null, high = -Infinity; for (const p of game.players) { if (totals[p.id] > high) { high = totals[p.id]; leader = p } } game.currentLeaderId = leader?.id || null; return leader }
         function determineWinner() { const activeHands = game.hands.filter(h => Object.keys(h.scores).some(id => h.scores[id] !== undefined && h.scores[id] !== null && h.scores[id] !== "")); if (!activeHands.length || !isHandComplete(activeHands[activeHands.length - 1])) return null; const leader = determineLeader(); return leader && getPlayerTotal(leader.id) >= game.winningScore ? leader : null }
@@ -2022,11 +2029,12 @@
             game = await gameRepository.save(game);
         }
 
-        function scheduleGameTimerStart(playerId) {
-            const lastPlayer = game.players[game.players.length - 1];
-            if (!lastPlayer || playerId !== lastPlayer.id || game.timer?.running || getGameElapsedMs() > 0) return;
+        function scheduleGameTimerStart() {
+            if (!game.players.length || !game.players.every(isPlayerNamed) || game.timer?.running || getGameElapsedMs() > 0) return;
             clearTimeout(gameTimerStartDelay);
-            gameTimerStartDelay = setTimeout(startGameTimer, 1500);
+            gameTimerStartDelay = setTimeout(() => {
+                if (game.players.every(isPlayerNamed)) startGameTimer();
+            }, 1500);
         }
 
         function stopGameTimer() {
@@ -2039,11 +2047,27 @@
             renderGameTimer();
         }
 
-        async function restartOrResumeGameTimer() {
+        async function restartGameTimer() {
+            stopGameTimer();
             normalizeGameTimer();
-            if (game.status !== "paused") game.timer.elapsedMs = 0;
+            game.timer.elapsedMs = 0;
             await startGameTimer();
             renderGameStatus();
+            showMessage("Timer restarted.");
+        }
+
+        function openTimerControls() {
+            const paused = game.status === "paused";
+            openModal(`<div class="modal-head"><h3>game timer</h3><button class="close-btn" data-close-modal>×</button></div><button class="manual-name" id="timerPauseButton">${paused ? "RESUME TIMER" : "PAUSE TIMER"}</button><button class="manual-name" id="timerRestartButton">RESTART TIMER</button>`);
+            modalCard.querySelector("[data-close-modal]").onclick = closeModal;
+            $("timerPauseButton").onclick = async () => {
+                closeModal();
+                await togglePauseGame();
+            };
+            $("timerRestartButton").onclick = async () => {
+                closeModal();
+                await restartGameTimer();
+            };
         }
         function renderGame() {
             ensureMinimumHands();
@@ -2169,6 +2193,7 @@
 
                     const s = hand.scores[p.id];
                     input.value = s === undefined ? "" : s;
+                    input.disabled = game.status === "finished" || !isPlayerNamed(p);
 
                     input.addEventListener("input", handleScoreInput);
                     input.addEventListener("keydown", handleScoreKeyDown);
@@ -2259,7 +2284,10 @@
             $("finishButton").textContent = gameFinished ? "GAME ENDED & SAVED" : "END GAME";
             $("finishButton").disabled = gameFinished;
             $("addPlayerButton").disabled = gameFinished;
-            document.querySelectorAll(".score-cell").forEach(input => input.disabled = gameFinished);
+            document.querySelectorAll(".score-cell").forEach(input => {
+                const player = game.players.find(p => p.id === input.dataset.playerId);
+                input.disabled = gameFinished || !isPlayerNamed(player);
+            });
 
             const pauseMenuButton = gameMenu.querySelector('[data-action="pause"]');
             if (pauseMenuButton) {
@@ -2444,7 +2472,7 @@
 
 
 
-        function addPlayer() { if (game.players.length >= APP_CONFIG.maxPlayers) return showMessage(`Maximum of ${APP_CONFIG.maxPlayers} players.`); const player = { id: createId(), name: `Player ${game.players.length + 1}` }; game.players.push(player); gameRepository.addPlayer(player, game.players.length - 1); renderGame(); openPlayerPicker(player.id); showMessage("Player column added.") }
+        function addPlayer() { if (game.players.length >= APP_CONFIG.maxPlayers) return showMessage(`Maximum of ${APP_CONFIG.maxPlayers} players.`); const player = { id: createId(), name: "Add Name" }; game.players.push(player); gameRepository.addPlayer(player, game.players.length - 1); renderGame(); openPlayerPicker(player.id); showMessage("Player column added.") }
         function removePlayer() { if (game.players.length <= APP_CONFIG.minPlayers) return showMessage("A game needs at least 2 players."); const names = game.players.map((p, i) => `${i + 1}. ${p.name}`).join("\n"), response = prompt(`Enter player number to remove:\n\n${names}`); if (!response) return; const i = Number(response) - 1; if (i < 0 || i >= game.players.length) return showMessage("That player number is not valid."); const removed = game.players[i]; if (!confirm(`Remove ${removed.name} from this game?`)) return; game.players.splice(i, 1); gameRepository.deletePlayer(removed.id); game.players.forEach((p, index) => gameRepository.updatePlayer(p, index)); for (const h of game.hands) delete h.scores[removed.id]; renderGame(); showMessage(`${removed.name} removed.`) }
         function renamePlayer(id) { const p = game.players.find(x => x.id === id); if (!p) return; const name = prompt("Player name:", p.name); if (!name?.trim()) return; p.name = name.trim(); gameRepository.updatePlayer(p, game.players.indexOf(p)); closeModal(); renderGame(); scheduleGameTimerStart(id) }
 
@@ -2985,7 +3013,7 @@
         document.addEventListener("click", e => { if (!gameMenu.contains(e.target) && e.target !== menuButton) closeMenu() });
         modalBackdrop.addEventListener("click", e => { if (e.target === modalBackdrop) closeModal() });
         $("finishButton").onclick = finishGame;
-        $("gameTimer").onclick = restartOrResumeGameTimer;
+        $("gameTimer").onclick = openTimerControls;
         $("addPlayerButton").onclick = addPlayer;
         document.querySelectorAll("[data-page]").forEach(b => b.addEventListener("click", () => showPage(b.dataset.page)));
         document.querySelectorAll("[data-stats-tab]").forEach(b => b.addEventListener("click", () => { currentStatsTab = b.dataset.statsTab; renderStats() }));
