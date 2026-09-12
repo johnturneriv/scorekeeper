@@ -48,6 +48,11 @@
             font-family: Inter, system-ui, sans-serif
         }
 
+        body.app-loading .app,
+        body.app-loading .bottom-nav {
+            visibility: hidden
+        }
+
         button,
         input {
             font: inherit
@@ -1725,7 +1730,7 @@
     </style>
 </head>
 
-<body>
+<body class="app-loading">
     <main class="app">
         <header class="topbar">
             <div class="brand" aria-label="Gin 500 Gin Rummy">
@@ -1971,7 +1976,7 @@
             })
         }
 
-        let game = null, newRowTimer = null, gameTimerInterval = null, gameTimerStartDelay = null, currentPage = "score";
+        let game = null, gameTimerInterval = null, gameTimerStartDelay = null, currentPage = "score";
         const $ = id => document.getElementById(id);
         const scorecardElement = $("scorecard"), menuButton = $("menuButton"), gameMenu = $("gameMenu"), gameStatusElement = $("gameStatus"), messageElement = $("message"), modalBackdrop = $("modalBackdrop"), modalCard = $("modalCard");
 
@@ -2197,6 +2202,7 @@
 
                     input.addEventListener("input", handleScoreInput);
                     input.addEventListener("keydown", handleScoreKeyDown);
+                    input.addEventListener("blur", handleScoreBlur);
 
                     wrap.appendChild(input);
 
@@ -2399,58 +2405,86 @@
         }
 
         function handleScoreInput(e) {
-            const input = e.target;
+            e.target.dataset.dirty = "true";
+        }
+        function handleScoreBlur(e) {
+            commitScoreInput(e.target, false);
+        }
+        function commitScoreInput(input, processCompletedHand) {
+            if (input.dataset.dirty !== "true") return false;
+
             const handIndex = Number(input.dataset.handIndex);
             const playerId = input.dataset.playerId;
             const value = input.value;
+            const hand = game.hands[handIndex];
+            const wasComplete = isHandComplete(hand);
 
             if (value === "") {
-                delete game.hands[handIndex].scores[playerId];
+                delete hand.scores[playerId];
             } else {
-                game.hands[handIndex].scores[playerId] = Number(value);
+                hand.scores[playerId] = Number(value);
             }
-            gameRepository.saveScore(game.hands[handIndex].id, playerId, value);
 
+            input.dataset.dirty = "false";
+            gameRepository.saveScore(hand.id, playerId, value);
             updateTotalsOnly();
 
-            clearTimeout(newRowTimer);
-
-            if (!isHandComplete(game.hands[handIndex])) return;
-
-            if (handIndex === 0) {
-                renderGameStatus();
+            if (processCompletedHand && !wasComplete && isHandComplete(hand)) {
+                finishCompletedHand(handIndex);
+                return "completed";
             }
 
-            newRowTimer = setTimeout(() => {
-                if (!isHandComplete(game.hands[handIndex])) return;
-
-                const currentDealerIndex = Math.max(
-                    0,
-                    game.players.findIndex(p => p.id === game.dealerId)
-                );
-
-                const nextDealerIndex = (currentDealerIndex + 1) % game.players.length;
-                game.dealerId = game.players[nextDealerIndex].id;
-                gameRepository.save(game);
-                if (determineWinner()) {
-                    renderGame();
-                    showWinnerPopup();
-                    return;
-                }
-
-                if (handIndex === game.hands.length - 1) {
-                    const newHand = createEmptyHand();
-                    game.hands.push(newHand);
-                    gameRepository.addHand(newHand, game.hands.length - 1);
-                    renderGame();
-                    focusScoreCell(game.hands.length - 1, 0);
-                } else {
-                    renderGame();
-                }
-            }, 1500);
+            return true;
         }
-        function handleScoreKeyDown(e) { if (e.key !== "Enter") return; e.preventDefault(); moveToNextScoreCell(Number(e.target.dataset.handIndex), Number(e.target.dataset.playerIndex)) }
-        function moveToNextScoreCell(handIndex, playerIndex) { if (playerIndex < game.players.length - 1) { focusScoreCell(handIndex, playerIndex + 1); return } const hand = game.hands[handIndex]; if (isHandComplete(hand)) { if (handIndex === game.hands.length - 1 && !determineWinner()) { clearTimeout(newRowTimer); newRowTimer = setTimeout(() => { if (handIndex === game.hands.length - 1 && !determineWinner()) { const newHand = createEmptyHand(); game.hands.push(newHand); gameRepository.addHand(newHand, game.hands.length - 1); renderGame(); focusScoreCell(game.hands.length - 1, 0) } }, 2000); return } focusScoreCell(Math.min(handIndex + 1, game.hands.length - 1), 0); return } focusFirstEmptyCell(handIndex) }
+        function finishCompletedHand(handIndex) {
+            if (handIndex === 0) renderGameStatus();
+
+            const currentDealerIndex = Math.max(
+                0,
+                game.players.findIndex(p => p.id === game.dealerId)
+            );
+            const nextDealerIndex = (currentDealerIndex + 1) % game.players.length;
+            game.dealerId = game.players[nextDealerIndex].id;
+            gameRepository.save(game);
+
+            if (determineWinner()) {
+                renderGame();
+                showWinnerPopup();
+                return;
+            }
+
+            if (handIndex === game.hands.length - 1) {
+                const newHand = createEmptyHand();
+                game.hands.push(newHand);
+                gameRepository.addHand(newHand, game.hands.length - 1);
+                renderGame();
+                focusScoreCell(game.hands.length - 1, 0);
+                return;
+            }
+
+            renderGame();
+            focusScoreCell(handIndex + 1, 0);
+        }
+        function handleScoreKeyDown(e) {
+            if (e.key !== "Enter") return;
+            e.preventDefault();
+            const result = commitScoreInput(e.target, true);
+            if (result === "completed") return;
+            moveToNextScoreCell(
+                Number(e.target.dataset.handIndex),
+                Number(e.target.dataset.playerIndex)
+            );
+        }
+        function moveToNextScoreCell(handIndex, playerIndex) {
+            if (playerIndex < game.players.length - 1) {
+                focusScoreCell(handIndex, playerIndex + 1);
+                return;
+            }
+
+            if (!isHandComplete(game.hands[handIndex])) {
+                focusFirstEmptyCell(handIndex);
+            }
+        }
         function focusScoreCell(h, p) { requestAnimationFrame(() => { const el = document.querySelector(`.score-cell[data-hand-index="${h}"][data-player-index="${p}"]`); if (el) { el.focus(); el.select() } }) }
         function focusFirstEmptyCell(h) { const hand = game.hands[h]; for (let i = 0; i < game.players.length; i++) { const v = hand.scores[game.players[i].id]; if (v === undefined || v === "") { focusScoreCell(h, i); return } } }
         function updateTotalsOnly() {
@@ -2781,7 +2815,16 @@
         }
         function showMessage(m) { messageElement.textContent = m; clearTimeout(showMessage.timeout); showMessage.timeout = setTimeout(() => messageElement.textContent = "", 2500) }
 
-        function showPage(page) { currentPage = page; document.querySelectorAll(".page").forEach(x => x.classList.remove("active")); $(`${page}Page`).classList.add("active"); document.querySelectorAll(".nav-btn").forEach(x => x.classList.toggle("active", x.dataset.page === page)); if (page === "score") renderGame(); if (page === "stats") renderStats(); window.scrollTo(0, 0) }
+        function showPage(page) {
+            const pageChanged = currentPage !== page;
+            currentPage = page;
+            document.querySelectorAll(".page").forEach(x => x.classList.remove("active"));
+            $(`${page}Page`).classList.add("active");
+            document.querySelectorAll(".nav-btn").forEach(x => x.classList.toggle("active", x.dataset.page === page));
+            if (pageChanged && page === "score") renderGame();
+            if (pageChanged && page === "stats") renderStats();
+            window.scrollTo(0, 0);
+        }
         function getArchivedGameSettlement(g) {
             const balances = Object.fromEntries(g.players.map(p => [p.id, 0]));
             const amount = Number(g.wager?.amount) || 0;
@@ -2942,6 +2985,15 @@
         function scheduleRemoteRefresh() {
             clearTimeout(remoteRefreshTimer);
             remoteRefreshTimer = setTimeout(async () => {
+                const activeScore = document.activeElement?.closest?.(".score-cell");
+                if (activeScore) {
+                    if (activeScore.dataset.remoteRefreshPending !== "true") {
+                        activeScore.dataset.remoteRefreshPending = "true";
+                        activeScore.addEventListener("blur", () => scheduleRemoteRefresh(), { once: true });
+                    }
+                    return;
+                }
+
                 const fresh = await gameRepository.loadGame(game.id);
                 if (!fresh) return;
                 game = fresh; normalizeGameTimer(); ensureMinimumHands(); renderGame(); runGameTimerDisplay();
@@ -2971,6 +3023,10 @@
                 game.players.push({ id: payload.new.id, name: payload.new.name, position: payload.new.position });
             }
             game.players.sort((a, b) => (a.position ?? 0) - (b.position ?? 0));
+            if (document.activeElement?.matches?.(".score-cell")) {
+                scheduleRemoteRefresh();
+                return;
+            }
             renderGame();
         }
         function applyRealtimeGame(payload) {
@@ -3016,7 +3072,15 @@
             const savedIsUsable = saved && saved.status !== "finished" && saved.players.length >= APP_CONFIG.minPlayers && saved.hands.length > 0;
             if (!savedIsUsable) localStorage.removeItem("ginRummyJoinedGameId");
             game = savedIsUsable ? saved : await gameRepository.create();
-            normalizeGameTimer(); ensureMinimumHands(); subscribeToGame(); subscribeToStatsUpdates(); await renderAll(); showPage("score"); runGameTimerDisplay();
+            normalizeGameTimer();
+            ensureMinimumHands();
+            subscribeToGame();
+            subscribeToStatsUpdates();
+            renderGame();
+            document.body.classList.remove("app-loading");
+            renderStats();
+            showPage("score");
+            runGameTimerDisplay();
         }
 
         menuButton.addEventListener("click", e => { e.stopPropagation(); toggleMenu() });
