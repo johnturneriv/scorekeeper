@@ -48,6 +48,25 @@
             font-family: Inter, system-ui, sans-serif
         }
 
+        body.app-loading .app,
+        body.app-loading .bottom-nav {
+            visibility: hidden
+        }
+
+        @media (hover: none) {
+            body[data-theme="classic"] .player-header:hover {
+                background: #0d2945
+            }
+
+            body[data-theme="poker"] .player-header:hover {
+                background: #123d31
+            }
+
+            body[data-theme="tropical"] .player-header:hover {
+                background: #064f50
+            }
+        }
+
         button,
         input {
             font: inherit
@@ -1725,7 +1744,7 @@
     </style>
 </head>
 
-<body>
+<body class="app-loading">
     <main class="app">
         <header class="topbar">
             <div class="brand" aria-label="Gin 500 Gin Rummy">
@@ -3108,7 +3127,15 @@
             if (!savedIsUsable) localStorage.removeItem("ginRummyJoinedGameId");
             game = savedIsUsable ? saved : await gameRepository.create();
             game.hands.filter(isHandComplete).forEach(hand => dealerProcessedHandIds.add(hand.id));
-            normalizeGameTimer(); ensureMinimumHands(); subscribeToGame(); subscribeToStatsUpdates(); await renderAll(); showPage("score"); runGameTimerDisplay();
+            normalizeGameTimer();
+            ensureMinimumHands();
+            subscribeToGame();
+            subscribeToStatsUpdates();
+            renderGame();
+            document.body.classList.remove("app-loading");
+            renderStats();
+            showPage("score");
+            runGameTimerDisplay();
         }
 
         menuButton.addEventListener("click", e => { e.stopPropagation(); toggleMenu() });
