@@ -1971,8 +1971,9 @@
             })
         }
 
-        let game = null, newRowTimer = null, gameTimerInterval = null, gameTimerStartDelay = null, currentPage = "score";
+        let game = null, gameTimerInterval = null, gameTimerStartDelay = null, currentPage = "score";
         const dealerProcessedHandIds = new Set();
+        const completedHandTimers = new Map();
         const $ = id => document.getElementById(id);
         const scorecardElement = $("scorecard"), menuButton = $("menuButton"), gameMenu = $("gameMenu"), gameStatusElement = $("gameStatus"), messageElement = $("message"), modalBackdrop = $("modalBackdrop"), modalCard = $("modalCard");
 
@@ -2428,9 +2429,11 @@
             }
             updateTotalsOnly();
 
-            clearTimeout(newRowTimer);
+            const hand = game.hands[handIndex];
+            clearTimeout(completedHandTimers.get(hand.id));
+            completedHandTimers.delete(hand.id);
 
-            if (!isHandComplete(game.hands[handIndex])) return;
+            if (!isHandComplete(hand)) return;
 
             if (handIndex === 0) {
                 renderGameStatus();
@@ -2440,9 +2443,11 @@
                 if (!isHandComplete(game.hands[handIndex])) return;
 
                 if (document.activeElement === input) {
-                    newRowTimer = setTimeout(finishCompletedRow, 100);
+                    completedHandTimers.set(hand.id, setTimeout(finishCompletedRow, 100));
                     return;
                 }
+
+                completedHandTimers.delete(hand.id);
 
                 const completedHand = game.hands[handIndex];
                 if (dealerProcessedHandIds.has(completedHand.id)) {
@@ -2478,7 +2483,7 @@
                 }
             };
 
-            newRowTimer = setTimeout(finishCompletedRow, 1500);
+            completedHandTimers.set(hand.id, setTimeout(finishCompletedRow, 1500));
         }
         function handleScoreBlur(e) {
             const input = e.target;
@@ -3017,9 +3022,16 @@
                     return;
                 }
 
+                const previousDealerId = game.dealerId;
                 const fresh = await gameRepository.loadGame(game.id);
                 if (!fresh) return;
-                game = fresh; game.hands.filter(isHandComplete).forEach(hand => dealerProcessedHandIds.add(hand.id)); normalizeGameTimer(); ensureMinimumHands(); renderGame(); runGameTimerDisplay();
+                if (fresh.dealerId !== previousDealerId) {
+                    const latestCompletedHand = [...fresh.hands].reverse().find(hand =>
+                        fresh.players.every(player => hand.scores[player.id] !== undefined && hand.scores[player.id] !== null && hand.scores[player.id] !== "")
+                    );
+                    if (latestCompletedHand) dealerProcessedHandIds.add(latestCompletedHand.id);
+                }
+                game = fresh; normalizeGameTimer(); ensureMinimumHands(); renderGame(); runGameTimerDisplay();
                 if (currentPage === "stats") await renderStats();
             }, 250);
         }
@@ -3063,6 +3075,10 @@
                 scheduleRemoteRefresh();
                 showMessage("This game was ended and saved.");
                 return;
+            }
+            if (payload.new.dealer_player_id !== game.dealerId) {
+                const latestCompletedHand = [...game.hands].reverse().find(isHandComplete);
+                if (latestCompletedHand) dealerProcessedHandIds.add(latestCompletedHand.id);
             }
             scheduleRemoteRefresh();
         }
