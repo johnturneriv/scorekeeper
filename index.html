@@ -788,9 +788,23 @@
         }
 
         .stats-list-table {
-            width: auto;
-            min-width: 0;
+            width: 100%;
+            min-width: 572px;
+            table-layout: fixed;
             white-space: nowrap
+        }
+
+        .stats-list-table th,
+        .stats-list-table td,
+        .stats-list-table th:first-child,
+        .stats-list-table td:first-child {
+            padding-left: 7.7px;
+            padding-right: 7.7px;
+            text-align: center
+        }
+
+        .stats-list-table .stats-name-button {
+            text-align: center
         }
 
         .stats-section-head {
@@ -2924,6 +2938,8 @@
             const map = new Map();
             let high = { score: null, name: "" }, low = { score: null, name: "" };
             let highGame = { score: null, name: "" };
+            let highMargin = { margin: null, name: "", winningScore: null, secondScore: null };
+            let longestGame = { elapsedMs: null, name: "" };
 
             for (const g of games) {
                 const totals = {};
@@ -2950,14 +2966,40 @@
                 if (winningScore !== null && (highGame.score === null || winningScore > highGame.score)) {
                     highGame = { score: winningScore, name: winner.name };
                 }
+                if (winner && g.players.length > 1) {
+                    const secondScore = Math.max(...g.players.filter(p => p.id !== winner.id).map(p => totals[p.id]));
+                    const margin = winningScore - secondScore;
+                    if (highMargin.margin === null || margin > highMargin.margin) {
+                        highMargin = { margin, name: winner.name, winningScore, secondScore };
+                    }
+                }
+                const elapsedMs = Number(g.timer?.elapsedMs) || 0;
+                if (elapsedMs > 0 && (longestGame.elapsedMs === null || elapsedMs > longestGame.elapsedMs)) {
+                    longestGame = { elapsedMs, name: winner?.name || "" };
+                }
             }
+
+            const players = [...map.entries()]
+                .filter(([key]) => !hidden.has(key))
+                .map(([, value]) => value)
+                .sort((a, b) => b.wins - a.wins);
+            const highNet = players.reduce((best, p) => !best || p.netWinnings > best.netWinnings ? p : best, null);
+            const highWinPct = players.reduce((best, p) => {
+                const pct = p.games ? p.wins / p.games : 0;
+                const bestPct = best?.games ? best.wins / best.games : -1;
+                return !best || pct > bestPct || (pct === bestPct && p.wins > best.wins) ? p : best;
+            }, null);
 
             return {
                 games,
-                players: [...map.entries()].filter(([key]) => !hidden.has(key)).map(([, value]) => value).sort((a, b) => b.wins - a.wins),
+                players,
                 high,
                 low,
-                highGame
+                highGame,
+                highMargin,
+                highNet,
+                highWinPct,
+                longestGame
             };
         }
         let currentStatsTab = "overview";
@@ -2967,8 +3009,7 @@
             if (currentStatsTab === "player") return renderStatsByPlayer(s);
             if (currentStatsTab === "game") return renderStatsByGame(s);
             const top = s.players[0];
-            $("statsOverview").innerHTML = `<div class="stats-grid"><div class="card metric"><label>HIGHEST GAME SCORE</label><strong>${s.highGame.score ?? "—"}</strong><small>${s.highGame.name ? `by ${escapeHtml(s.highGame.name)}` : "—"}</small></div><div class="card metric"><label>TOP PLAYER</label><strong class="red">${top?.name || "—"}</strong><small>${top ? `${top.wins} wins` : "no games yet"}</small></div><div class="card metric"><label>LOWEST HAND</label><strong>${s.low.score ?? "—"}</strong><small>${s.low.name ? `by ${escapeHtml(s.low.name)}` : "—"}</small></div><div class="card metric"><label>HIGHEST HAND</label><strong class="red">${s.high.score ?? "—"}</strong><small>${s.high.name ? `by ${escapeHtml(s.high.name)}` : "—"}</small></div></div><div class="card player-summary"><div class="section-title" style="margin-bottom:8px">player summary</div><table class="summary-table"><thead><tr><th>player</th><th>games</th><th>wins</th><th>win %</th><th>net winnings</th></tr></thead><tbody>${s.players.length ? s.players.map(p => `<tr><td><button class="stats-name-button" data-stats-player="${escapeHtml(p.name)}">${escapeHtml(p.name)}</button></td><td>${p.games}</td><td>${p.wins}</td><td>${Math.round(p.wins / p.games * 100)}%</td><td>${formatMoney(p.netWinnings)}</td></tr>`).join("") : '<tr><td colspan="5">No finished games yet.</td></tr>'}</tbody></table></div>`;
-            $("statsOverview").querySelectorAll("[data-stats-player]").forEach(button => button.onclick = () => showPlayerWinnings(button.dataset.statsPlayer, s));
+            $("statsOverview").innerHTML = `<div class="stats-grid"><div class="card metric"><label>HIGHEST GAME SCORE</label><strong>${s.highGame.score ?? "—"}</strong><small>${s.highGame.name ? `by ${escapeHtml(s.highGame.name)}` : "—"}</small></div><div class="card metric"><label>TOP PLAYER</label><strong class="red">${top?.name || "—"}</strong><small>${top ? `${top.wins} wins` : "no games yet"}</small></div><div class="card metric"><label>LOWEST HAND</label><strong>${s.low.score ?? "—"}</strong><small>${s.low.name ? `by ${escapeHtml(s.low.name)}` : "—"}</small></div><div class="card metric"><label>HIGHEST HAND</label><strong class="red">${s.high.score ?? "—"}</strong><small>${s.high.name ? `by ${escapeHtml(s.high.name)}` : "—"}</small></div><div class="card metric"><label>BIGGEST WINNING MARGIN</label><strong>${s.highMargin.margin ?? "—"}</strong><small>${s.highMargin.name ? `${escapeHtml(s.highMargin.name)}: ${s.highMargin.winningScore}–${s.highMargin.secondScore}` : "—"}</small></div><div class="card metric"><label>HIGHEST NET WINNINGS</label><strong class="red">${s.highNet ? formatMoney(s.highNet.netWinnings) : "—"}</strong><small>${s.highNet ? `by ${escapeHtml(s.highNet.name)}` : "—"}</small></div><div class="card metric"><label>HIGHEST WIN PERCENTAGE</label><strong>${s.highWinPct ? `${Math.round(s.highWinPct.wins / s.highWinPct.games * 100)}%` : "—"}</strong><small>${s.highWinPct ? `${escapeHtml(s.highWinPct.name)} · ${s.highWinPct.wins} of ${s.highWinPct.games}` : "—"}</small></div><div class="card metric"><label>LONGEST GAME</label><strong class="red">${s.longestGame.elapsedMs !== null ? formatGameDuration(s.longestGame.elapsedMs) : "—"}</strong><small>${s.longestGame.name ? `won by ${escapeHtml(s.longestGame.name)}` : "—"}</small></div></div>`;
         }
         function renderStatsByPlayer(s) {
             $("statsOverview").innerHTML = `<div class="card player-summary"><div class="section-title" style="margin-bottom:8px">by player</div><table class="summary-table stats-list-table"><thead><tr><th>player</th><th>games</th><th>wins</th><th>win %</th><th>total points</th><th>net winnings</th><th></th></tr></thead><tbody>${s.players.length ? s.players.map(p => `<tr><td><button class="stats-name-button" data-stats-player="${escapeHtml(p.name)}">${escapeHtml(p.name)}</button></td><td>${p.games}</td><td>${p.wins}</td><td>${Math.round(p.wins / p.games * 100)}%</td><td>${p.points}</td><td>${formatMoney(p.netWinnings)}</td><td><button class="stats-delete-button" data-hide-stats-player="${escapeHtml(p.name)}" aria-label="Hide ${escapeHtml(p.name)} from stats">✕</button></td></tr>`).join("") : '<tr><td colspan="7">No players to show.</td></tr>'}</tbody></table></div>`;
