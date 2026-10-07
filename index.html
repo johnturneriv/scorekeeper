@@ -48,25 +48,6 @@
             font-family: Inter, system-ui, sans-serif
         }
 
-        body.app-loading .app,
-        body.app-loading .bottom-nav {
-            visibility: hidden
-        }
-
-        @media (hover: none) {
-            body[data-theme="classic"] .player-header:hover {
-                background: #0d2945
-            }
-
-            body[data-theme="poker"] .player-header:hover {
-                background: #123d31
-            }
-
-            body[data-theme="tropical"] .player-header:hover {
-                background: #064f50
-            }
-        }
-
         button,
         input {
             font: inherit
@@ -804,6 +785,26 @@
         .summary-table tr:first-of-type td:first-child {
             color: var(--red);
             font-weight: 800
+        }
+
+        .stats-list-table {
+            width: auto;
+            min-width: 0;
+            white-space: nowrap
+        }
+
+        .stats-section-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            gap: 12px;
+            margin-bottom: 8px
+        }
+
+        .stats-section-count {
+            color: var(--muted);
+            font-size: 11px;
+            font-weight: 700
         }
 
         .stats-name-button,
@@ -1744,7 +1745,7 @@
     </style>
 </head>
 
-<body class="app-loading">
+<body>
     <main class="app">
         <header class="topbar">
             <div class="brand" aria-label="Gin 500 Gin Rummy">
@@ -2922,6 +2923,7 @@
             const hidden = new Set(hiddenStatsPlayerRepository.load());
             const map = new Map();
             let high = { score: null, name: "" }, low = { score: null, name: "" };
+            let highGame = { score: null, name: "" };
 
             for (const g of games) {
                 const totals = {};
@@ -2943,13 +2945,19 @@
                         }
                     }
                 }
+                const winner = g.players.find(p => p.id === g.winnerId);
+                const winningScore = winner ? totals[winner.id] : null;
+                if (winningScore !== null && (highGame.score === null || winningScore > highGame.score)) {
+                    highGame = { score: winningScore, name: winner.name };
+                }
             }
 
             return {
                 games,
                 players: [...map.entries()].filter(([key]) => !hidden.has(key)).map(([, value]) => value).sort((a, b) => b.wins - a.wins),
                 high,
-                low
+                low,
+                highGame
             };
         }
         let currentStatsTab = "overview";
@@ -2959,17 +2967,17 @@
             if (currentStatsTab === "player") return renderStatsByPlayer(s);
             if (currentStatsTab === "game") return renderStatsByGame(s);
             const top = s.players[0];
-            $("statsOverview").innerHTML = `<div class="stats-grid"><div class="card metric"><label>TOTAL GAMES</label><strong>${s.games.length}</strong><small>played</small></div><div class="card metric"><label>TOP PLAYER</label><strong class="red">${top?.name || "—"}</strong><small>${top ? `${top.wins} wins` : "no games yet"}</small></div><div class="card metric"><label>LOWEST HAND</label><strong>${s.low.score ?? "—"}</strong><small>${s.low.name ? `by ${escapeHtml(s.low.name)}` : "—"}</small></div><div class="card metric"><label>HIGHEST HAND</label><strong class="red">${s.high.score ?? "—"}</strong><small>${s.high.name ? `by ${escapeHtml(s.high.name)}` : "—"}</small></div></div><div class="card player-summary"><div class="section-title" style="margin-bottom:8px">player summary</div><table class="summary-table"><thead><tr><th>player</th><th>games</th><th>wins</th><th>win %</th><th>net winnings</th></tr></thead><tbody>${s.players.length ? s.players.map(p => `<tr><td><button class="stats-name-button" data-stats-player="${escapeHtml(p.name)}">${escapeHtml(p.name)}</button></td><td>${p.games}</td><td>${p.wins}</td><td>${Math.round(p.wins / p.games * 100)}%</td><td>${formatMoney(p.netWinnings)}</td></tr>`).join("") : '<tr><td colspan="5">No finished games yet.</td></tr>'}</tbody></table></div>`;
+            $("statsOverview").innerHTML = `<div class="stats-grid"><div class="card metric"><label>HIGHEST GAME SCORE</label><strong>${s.highGame.score ?? "—"}</strong><small>${s.highGame.name ? `by ${escapeHtml(s.highGame.name)}` : "—"}</small></div><div class="card metric"><label>TOP PLAYER</label><strong class="red">${top?.name || "—"}</strong><small>${top ? `${top.wins} wins` : "no games yet"}</small></div><div class="card metric"><label>LOWEST HAND</label><strong>${s.low.score ?? "—"}</strong><small>${s.low.name ? `by ${escapeHtml(s.low.name)}` : "—"}</small></div><div class="card metric"><label>HIGHEST HAND</label><strong class="red">${s.high.score ?? "—"}</strong><small>${s.high.name ? `by ${escapeHtml(s.high.name)}` : "—"}</small></div></div><div class="card player-summary"><div class="section-title" style="margin-bottom:8px">player summary</div><table class="summary-table"><thead><tr><th>player</th><th>games</th><th>wins</th><th>win %</th><th>net winnings</th></tr></thead><tbody>${s.players.length ? s.players.map(p => `<tr><td><button class="stats-name-button" data-stats-player="${escapeHtml(p.name)}">${escapeHtml(p.name)}</button></td><td>${p.games}</td><td>${p.wins}</td><td>${Math.round(p.wins / p.games * 100)}%</td><td>${formatMoney(p.netWinnings)}</td></tr>`).join("") : '<tr><td colspan="5">No finished games yet.</td></tr>'}</tbody></table></div>`;
             $("statsOverview").querySelectorAll("[data-stats-player]").forEach(button => button.onclick = () => showPlayerWinnings(button.dataset.statsPlayer, s));
         }
         function renderStatsByPlayer(s) {
-            $("statsOverview").innerHTML = `<div class="card player-summary"><div class="section-title" style="margin-bottom:8px">by player</div><table class="summary-table"><thead><tr><th>player</th><th>games</th><th>wins</th><th>win %</th><th>net winnings</th><th></th></tr></thead><tbody>${s.players.length ? s.players.map(p => `<tr><td><button class="stats-name-button" data-stats-player="${escapeHtml(p.name)}">${escapeHtml(p.name)}</button></td><td>${p.games}</td><td>${p.wins}</td><td>${Math.round(p.wins / p.games * 100)}%</td><td>${formatMoney(p.netWinnings)}</td><td><button class="stats-delete-button" data-hide-stats-player="${escapeHtml(p.name)}" aria-label="Hide ${escapeHtml(p.name)} from stats">✕</button></td></tr>`).join("") : '<tr><td colspan="6">No players to show.</td></tr>'}</tbody></table></div>`;
+            $("statsOverview").innerHTML = `<div class="card player-summary"><div class="section-title" style="margin-bottom:8px">by player</div><table class="summary-table stats-list-table"><thead><tr><th>player</th><th>games</th><th>wins</th><th>win %</th><th>total points</th><th>net winnings</th><th></th></tr></thead><tbody>${s.players.length ? s.players.map(p => `<tr><td><button class="stats-name-button" data-stats-player="${escapeHtml(p.name)}">${escapeHtml(p.name)}</button></td><td>${p.games}</td><td>${p.wins}</td><td>${Math.round(p.wins / p.games * 100)}%</td><td>${p.points}</td><td>${formatMoney(p.netWinnings)}</td><td><button class="stats-delete-button" data-hide-stats-player="${escapeHtml(p.name)}" aria-label="Hide ${escapeHtml(p.name)} from stats">✕</button></td></tr>`).join("") : '<tr><td colspan="7">No players to show.</td></tr>'}</tbody></table></div>`;
             $("statsOverview").querySelectorAll("[data-stats-player]").forEach(button => button.onclick = () => showPlayerWinnings(button.dataset.statsPlayer, s));
             $("statsOverview").querySelectorAll("[data-hide-stats-player]").forEach(button => button.onclick = () => hideStatsPlayer(button.dataset.hideStatsPlayer));
         }
         function renderStatsByGame(s) {
             const games = s.games.slice().sort((a, b) => new Date(b.finishedAt || b.updatedAt) - new Date(a.finishedAt || a.updatedAt));
-            $("statsOverview").innerHTML = `<div class="card player-summary"><div class="section-title" style="margin-bottom:8px">by game</div><table class="summary-table"><thead><tr><th>date</th><th>winner</th><th>wager</th><th>time</th></tr></thead><tbody>${games.length ? games.map(g => { const w = g.players.find(p => p.id === g.winnerId); return `<tr class="stats-game-row" data-stats-game-id="${g.id}" style="cursor:pointer"><td>${formatDate(g.finishedAt || g.updatedAt)}</td><td>${escapeHtml(w?.name || "—")}</td><td>${formatArchivedWager(g)}</td><td>${formatGameDuration(g.timer?.elapsedMs || 0)}</td></tr>` }).join("") : '<tr><td colspan="4">No finished games yet.</td></tr>'}</tbody></table></div>`;
+            $("statsOverview").innerHTML = `<div class="card player-summary"><div class="stats-section-head"><div class="section-title">by game</div><div class="stats-section-count">${games.length} total game${games.length === 1 ? "" : "s"}</div></div><table class="summary-table stats-list-table"><thead><tr><th>date</th><th>winner</th><th>score</th><th>wager</th><th>time</th></tr></thead><tbody>${games.length ? games.map(g => { const w = g.players.find(p => p.id === g.winnerId); const winningScore = w ? g.hands.reduce((total, hand) => total + Number(hand.scores[w.id] || 0), 0) : "—"; return `<tr class="stats-game-row" data-stats-game-id="${g.id}" style="cursor:pointer"><td>${formatDate(g.finishedAt || g.updatedAt)}</td><td>${escapeHtml(w?.name || "—")}</td><td>${winningScore}</td><td>${formatArchivedWager(g)}</td><td>${formatGameDuration(g.timer?.elapsedMs || 0)}</td></tr>` }).join("") : '<tr><td colspan="5">No finished games yet.</td></tr>'}</tbody></table></div>`;
             $("statsOverview").querySelectorAll("[data-stats-game-id]").forEach(row => row.onclick = () => toggleStatsGameDetail(row, row.dataset.statsGameId, games))
         }
 
@@ -3008,7 +3016,7 @@
             const settlement = getArchivedGameSettlement(g);
             const detail = document.createElement("tr");
             detail.className = "stats-game-detail-row";
-            detail.innerHTML = `<td colspan="4"><div class="inline-game-detail"><div class="inline-game-meta"><span>${formatDateTime(g.finishedAt || g.updatedAt)}</span><span>${formatGameDuration(g.timer?.elapsedMs || 0)}</span></div><div class="stats-detail-summary"><strong>${escapeHtml(winner?.name || "—")} won</strong><span>Wager: ${formatArchivedWager(g)}</span><span>Winner's proceeds: ${formatMoney(settlement.winnerProceeds)}</span></div><div class="inline-score-wrap"><table class="inline-score-table"><thead><tr><th>#</th>${g.players.map(p => `<th class="${p.id === g.winnerId ? "winner-col" : ""}">${escapeHtml(p.name)}</th>`).join("")}</tr></thead><tbody>${g.hands.map((h, i) => `<tr><td>${i + 1}</td>${g.players.map(p => `<td class="${p.id === g.winnerId ? "winner-col" : ""}">${h.scores[p.id] ?? "—"}</td>`).join("")}</tr>`).join("")}<tr><td>Σ</td>${g.players.map(p => `<td class="${p.id === g.winnerId ? "winner-col" : ""}"><strong>${totals[p.id]}</strong></td>`).join("")}</tr></tbody></table></div><button class="manual-name" data-delete-finished-game="${g.id}" style="color:var(--red);border-color:var(--red);margin-top:14px">delete game</button></div></td>`;
+            detail.innerHTML = `<td colspan="5"><div class="inline-game-detail"><div class="inline-game-meta"><span>${formatDateTime(g.finishedAt || g.updatedAt)}</span><span>${formatGameDuration(g.timer?.elapsedMs || 0)}</span></div><div class="stats-detail-summary"><strong>${escapeHtml(winner?.name || "—")} won</strong><span>Wager: ${formatArchivedWager(g)}</span><span>Winner's proceeds: ${formatMoney(settlement.winnerProceeds)}</span></div><div class="inline-score-wrap"><table class="inline-score-table"><thead><tr><th>#</th>${g.players.map(p => `<th class="${p.id === g.winnerId ? "winner-col" : ""}">${escapeHtml(p.name)}</th>`).join("")}</tr></thead><tbody>${g.hands.map((h, i) => `<tr><td>${i + 1}</td>${g.players.map(p => `<td class="${p.id === g.winnerId ? "winner-col" : ""}">${h.scores[p.id] ?? "—"}</td>`).join("")}</tr>`).join("")}<tr><td>Σ</td>${g.players.map(p => `<td class="${p.id === g.winnerId ? "winner-col" : ""}"><strong>${totals[p.id]}</strong></td>`).join("")}</tr></tbody></table></div><button class="manual-name" data-delete-finished-game="${g.id}" style="color:var(--red);border-color:var(--red);margin-top:14px">delete game</button></div></td>`;
             row.insertAdjacentElement("afterend", detail)
             detail.querySelector("[data-delete-finished-game]").onclick = event => { event.stopPropagation(); deleteFinishedGame(gameId) }
         }
@@ -3127,15 +3135,7 @@
             if (!savedIsUsable) localStorage.removeItem("ginRummyJoinedGameId");
             game = savedIsUsable ? saved : await gameRepository.create();
             game.hands.filter(isHandComplete).forEach(hand => dealerProcessedHandIds.add(hand.id));
-            normalizeGameTimer();
-            ensureMinimumHands();
-            subscribeToGame();
-            subscribeToStatsUpdates();
-            renderGame();
-            document.body.classList.remove("app-loading");
-            renderStats();
-            showPage("score");
-            runGameTimerDisplay();
+            normalizeGameTimer(); ensureMinimumHands(); subscribeToGame(); subscribeToStatsUpdates(); await renderAll(); showPage("score"); runGameTimerDisplay();
         }
 
         menuButton.addEventListener("click", e => { e.stopPropagation(); toggleMenu() });
