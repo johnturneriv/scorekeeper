@@ -1779,6 +1779,7 @@
                 <div class="menu-divider"></div>
                 <button data-action="theme">Change Theme</button>
                 <div class="menu-divider"></div>
+                <button id="soundToggleButton" data-action="sound" aria-pressed="true">Sound: On</button>
                 <button data-action="settings">Winning Score</button>
                 <button data-action="delete" class="danger">Delete Current Game</button>
             </div>
@@ -1834,8 +1835,8 @@
         function createNewGame() {
             const now = new Date().toISOString();
             const players = [
-                { id: createId(), name: "Add Name" },
-                { id: createId(), name: "Add Name" }
+                { id: createId(), name: "Add Name", position: 0 },
+                { id: createId(), name: "Add Name", position: 1 }
             ];
 
             return {
@@ -1923,7 +1924,7 @@
                 return {
                     id: g.id, gameCode: g.game_code, status: g.status,
                     createdAt: g.created_at, updatedAt: g.updated_at, finishedAt: g.finished_at,
-                    winningScore: g.winning_score, players: players.map(p => ({ id: p.id, name: /^player \d+$/i.test(p.name.trim()) ? "Add Name" : p.name })),
+                    winningScore: g.winning_score, players: players.map((p, index) => ({ id: p.id, position: p.position ?? index, name: /^player \d+$/i.test(p.name.trim()) ? "Add Name" : p.name })),
                     hands: hands.map(h => ({ id: h.id, scores: Object.fromEntries(scores.filter(s => s.hand_id === h.id).map(s => [s.player_id, s.score])) })),
                     winnerId: g.winner_player_id, currentLeaderId: null, dealerId: g.dealer_player_id,
                     timer: { elapsedMs: Number(g.timer_elapsed_ms) || 0, startedAt: g.timer_started_at, running: g.status === "active" && !!g.timer_started_at },
@@ -2576,7 +2577,30 @@
 
 
 
-        function addPlayer() { if (game.players.length >= APP_CONFIG.maxPlayers) return showMessage(`Maximum of ${APP_CONFIG.maxPlayers} players.`); const player = { id: createId(), name: "Add Name" }; game.players.push(player); gameRepository.addPlayer(player, game.players.length - 1); renderGame(); openPlayerPicker(player.id); showMessage("Player column added.") }
+        let addingPlayer = false;
+        async function addPlayer() {
+            if (addingPlayer || game.status === "finished") return;
+            if (game.players.length >= APP_CONFIG.maxPlayers) return showMessage(`Maximum of ${APP_CONFIG.maxPlayers} players.`);
+            addingPlayer = true;
+            const gameId = game.id;
+            const position = Math.max(-1, ...game.players.map((p, index) => Number(p.position ?? index))) + 1;
+            const player = { id: createId(), name: "Add Name", position };
+            $("addPlayerButton").disabled = true;
+            try {
+                const { error } = await gameRepository.addPlayer(player, position);
+                if (error) throw error;
+                if (game.id !== gameId) return;
+                if (!game.players.some(p => p.id === player.id)) game.players.push(player);
+                renderGame();
+                await openPlayerPicker(player.id);
+                showMessage("Player column added.");
+            } catch (error) {
+                showMessage("Player could not be added. Please try again.");
+            } finally {
+                addingPlayer = false;
+                $("addPlayerButton").disabled = game.status === "finished";
+            }
+        }
         function removePlayer() { if (game.players.length <= APP_CONFIG.minPlayers) return showMessage("A game needs at least 2 players."); const names = game.players.map((p, i) => `${i + 1}. ${p.name}`).join("\n"), response = prompt(`Enter player number to remove:\n\n${names}`); if (!response) return; const i = Number(response) - 1; if (i < 0 || i >= game.players.length) return showMessage("That player number is not valid."); const removed = game.players[i]; if (!confirm(`Remove ${removed.name} from this game?`)) return; game.players.splice(i, 1); gameRepository.deletePlayer(removed.id); game.players.forEach((p, index) => gameRepository.updatePlayer(p, index)); for (const h of game.hands) delete h.scores[removed.id]; renderGame(); showMessage(`${removed.name} removed.`) }
         function renamePlayer(id) { const p = game.players.find(x => x.id === id); if (!p) return; const name = prompt("Player name:", p.name); if (!name?.trim()) return; p.name = name.trim(); gameRepository.updatePlayer(p, game.players.indexOf(p)); closeModal(); renderGame(); scheduleGameTimerStart(id) }
 
@@ -2632,11 +2656,25 @@
             });
         }
         async function openPlayerPicker(playerId) {
-            const player = game.players.find(p => p.id === playerId); if (!player) return; const saved = await playerRepository.load();
+            const gameId = game.id;
+            if (!game.players.some(p => p.id === playerId)) return;
+            const saved = await playerRepository.load();
+            if (game.id !== gameId || !game.players.some(p => p.id === playerId)) return;
             openModal(`<div class="modal-head"><h3>choose player</h3><button class="close-btn" data-close-modal>×</button></div><div>${saved.length ? saved.map(item => `<div class="saved-player"><button class="saved-player-name" data-pick-saved="${item.id}">${escapeHtml(item.name)}</button></div>`).join("") : '<div class="empty-state">No saved players yet.</div>'}</div><button class="manual-name" id="manualNameButton">edit name manually</button><button class="manual-name" id="managePlayersButton">manage player list</button>`);
             modalCard.querySelector("[data-close-modal]").onclick = closeModal;
-            modalCard.querySelectorAll("[data-pick-saved]").forEach(b => b.onclick = () => { const selected = saved.find(item => item.id === b.dataset.pickSaved); if (selected) { player.name = selected.name; gameRepository.updatePlayer(player, game.players.indexOf(player)); closeModal(); renderGame(); scheduleGameTimerStart(playerId) } });
-            $("manualNameButton").onclick = () => renamePlayer(playerId); $("managePlayersButton").onclick = openPlayerListManager
+            modalCard.querySelectorAll("[data-pick-saved]").forEach(b => b.onclick = () => {
+                const selected = saved.find(item => item.id === b.dataset.pickSaved);
+                const index = game.players.findIndex(p => p.id === playerId);
+                if (!selected || game.id !== gameId || index < 0) return;
+                const player = game.players[index];
+                player.name = selected.name;
+                gameRepository.updatePlayer(player, player.position ?? index);
+                closeModal();
+                renderGame();
+                scheduleGameTimerStart(playerId);
+            });
+            $("manualNameButton").onclick = () => renamePlayer(playerId);
+            $("managePlayersButton").onclick = openPlayerListManager;
         }
         function escapeHtml(value) { return String(value).replace(/[&<>'"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" }[c])) }
 
@@ -2737,6 +2775,85 @@
             };
         }
 
+        const gameSounds = (() => {
+            let context = null;
+            let enabled = true;
+            const playedGames = new Set();
+            try { enabled = localStorage.getItem("ginRummySoundEnabled") !== "false"; } catch {}
+
+            function updateButton() {
+                const button = $("soundToggleButton");
+                button.textContent = `Sound: ${enabled ? "On" : "Off"}`;
+                button.setAttribute("aria-pressed", String(enabled));
+            }
+
+            function unlock() {
+                if (!enabled) return;
+                try {
+                    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+                    if (!AudioContextClass) return;
+                    if (!context) context = new AudioContextClass();
+                    if (context.state === "suspended") context.resume().catch(() => {});
+                } catch {}
+            }
+
+            function tone(frequency, start, duration, volume, type = "sine") {
+                const oscillator = context.createOscillator();
+                const envelope = context.createGain();
+                oscillator.type = type;
+                oscillator.frequency.setValueAtTime(frequency, start);
+                envelope.gain.setValueAtTime(0, start);
+                envelope.gain.linearRampToValueAtTime(volume, start + 0.008);
+                envelope.gain.exponentialRampToValueAtTime(0.0001, start + duration);
+                oscillator.connect(envelope);
+                envelope.connect(context.destination);
+                oscillator.onended = () => { oscillator.disconnect(); envelope.disconnect(); };
+                oscillator.start(start);
+                oscillator.stop(start + duration + 0.02);
+            }
+
+            function playWin(gameId, wonMoney) {
+                if (playedGames.has(gameId)) return;
+                playedGames.add(gameId);
+                try {
+                    const key = `ginRummyWinSound:${gameId}`;
+                    if (sessionStorage.getItem(key)) return;
+                    sessionStorage.setItem(key, "played");
+                } catch {}
+                if (!enabled || !context || context.state !== "running") return;
+                try {
+                    const start = context.currentTime + 0.015;
+                    if (wonMoney) {
+                        // A brief series of softly ringing metallic coin taps.
+                        [0, 0.075, 0.13, 0.225, 0.285].forEach((delay, index) => {
+                            const base = [1760, 2093, 1568, 2349, 1976][index];
+                            tone(base, start + delay, 0.2, 0.025);
+                            tone(base * 1.47, start + delay, 0.12, 0.012);
+                            tone(base * 2.09, start + delay, 0.07, 0.006);
+                        });
+                    } else {
+                        // A restrained three-note chime, under one second.
+                        [523.25, 659.25, 783.99].forEach((frequency, index) => {
+                            tone(frequency, start + index * 0.12, 0.38, 0.045);
+                            tone(frequency * 2, start + index * 0.12, 0.2, 0.008);
+                        });
+                    }
+                } catch {}
+            }
+
+            document.addEventListener("pointerdown", unlock, { passive: true });
+            document.addEventListener("keydown", unlock);
+            $("soundToggleButton").onclick = () => {
+                enabled = !enabled;
+                try { localStorage.setItem("ginRummySoundEnabled", String(enabled)); } catch {}
+                if (enabled) unlock();
+                updateButton();
+                closeMenu();
+            };
+            updateButton();
+            return { playWin };
+        })();
+
         function showWinnerPopup() {
             const winner = determineWinner() || determineLeader();
             if (!winner) return;
@@ -2744,6 +2861,9 @@
             const wager = game.wager;
             const hasWager = wager && Number(wager.amount) > 0;
             const settlement = hasWager ? getWagerSettlement() : null;
+            if (determineWinner()) {
+                gameSounds.playWin(game.id, !!settlement && Number(settlement.balances[winner.id]) > 0);
+            }
 
             let moneyHtml = "";
 
@@ -2938,6 +3058,7 @@
             const map = new Map();
             let high = { score: null, name: "" }, low = { score: null, name: "" };
             let highGame = { score: null, name: "" };
+            let biggestLoser = { score: null, name: "" };
             let highMargin = { margin: null, name: "", winningScore: null, secondScore: null };
             let longestGame = { elapsedMs: null, name: "" };
 
@@ -2946,6 +3067,10 @@
                 const settlement = getArchivedGameSettlement(g);
                 for (const p of g.players) {
                     totals[p.id] = g.hands.reduce((t, h) => t + Number(h.scores[p.id] || 0), 0);
+                    if (Number(g.winningScore) === 500 && g.winnerId &&
+                        (biggestLoser.score === null || totals[p.id] < biggestLoser.score)) {
+                        biggestLoser = { score: totals[p.id], name: p.name };
+                    }
                     const key = p.name.trim().toLowerCase();
                     if (!map.has(key)) map.set(key, { name: p.name, games: 0, wins: 0, points: 0, netWinnings: 0 });
                     const stats = map.get(key);
@@ -2984,11 +3109,7 @@
                 .map(([, value]) => value)
                 .sort((a, b) => b.wins - a.wins);
             const highNet = players.reduce((best, p) => !best || p.netWinnings > best.netWinnings ? p : best, null);
-            const highWinPct = players.reduce((best, p) => {
-                const pct = p.games ? p.wins / p.games : 0;
-                const bestPct = best?.games ? best.wins / best.games : -1;
-                return !best || pct > bestPct || (pct === bestPct && p.wins > best.wins) ? p : best;
-            }, null);
+
 
             return {
                 games,
@@ -2998,7 +3119,7 @@
                 highGame,
                 highMargin,
                 highNet,
-                highWinPct,
+                biggestLoser,
                 longestGame
             };
         }
@@ -3009,7 +3130,7 @@
             if (currentStatsTab === "player") return renderStatsByPlayer(s);
             if (currentStatsTab === "game") return renderStatsByGame(s);
             const top = s.players[0];
-            $("statsOverview").innerHTML = `<div class="stats-grid"><div class="card metric"><label>HIGHEST GAME SCORE</label><strong>${s.highGame.score ?? "—"}</strong><small>${s.highGame.name ? `by ${escapeHtml(s.highGame.name)}` : "—"}</small></div><div class="card metric"><label>TOP PLAYER</label><strong class="red">${top?.name || "—"}</strong><small>${top ? `${top.wins} wins` : "no games yet"}</small></div><div class="card metric"><label>LOWEST HAND</label><strong>${s.low.score ?? "—"}</strong><small>${s.low.name ? `by ${escapeHtml(s.low.name)}` : "—"}</small></div><div class="card metric"><label>HIGHEST HAND</label><strong class="red">${s.high.score ?? "—"}</strong><small>${s.high.name ? `by ${escapeHtml(s.high.name)}` : "—"}</small></div><div class="card metric"><label>BIGGEST WINNING MARGIN</label><strong>${s.highMargin.margin ?? "—"}</strong><small>${s.highMargin.name ? `${escapeHtml(s.highMargin.name)}: ${s.highMargin.winningScore}–${s.highMargin.secondScore}` : "—"}</small></div><div class="card metric"><label>HIGHEST NET WINNINGS</label><strong class="red">${s.highNet ? formatMoney(s.highNet.netWinnings) : "—"}</strong><small>${s.highNet ? `by ${escapeHtml(s.highNet.name)}` : "—"}</small></div><div class="card metric"><label>HIGHEST WIN PERCENTAGE</label><strong>${s.highWinPct ? `${Math.round(s.highWinPct.wins / s.highWinPct.games * 100)}%` : "—"}</strong><small>${s.highWinPct ? `${escapeHtml(s.highWinPct.name)} · ${s.highWinPct.wins} of ${s.highWinPct.games}` : "—"}</small></div><div class="card metric"><label>LONGEST GAME</label><strong class="red">${s.longestGame.elapsedMs !== null ? formatGameDuration(s.longestGame.elapsedMs) : "—"}</strong><small>${s.longestGame.name ? `won by ${escapeHtml(s.longestGame.name)}` : "—"}</small></div></div>`;
+            $("statsOverview").innerHTML = `<div class="stats-grid"><div class="card metric"><label>HIGHEST GAME SCORE</label><strong>${s.highGame.score ?? "—"}</strong><small>${s.highGame.name ? `by ${escapeHtml(s.highGame.name)}` : "—"}</small></div><div class="card metric"><label>TOP PLAYER</label><strong class="red">${top?.name || "—"}</strong><small>${top ? `${top.wins} wins` : "no games yet"}</small></div><div class="card metric"><label>LOWEST HAND</label><strong>${s.low.score ?? "—"}</strong><small>${s.low.name ? `by ${escapeHtml(s.low.name)}` : "—"}</small></div><div class="card metric"><label>HIGHEST HAND</label><strong class="red">${s.high.score ?? "—"}</strong><small>${s.high.name ? `by ${escapeHtml(s.high.name)}` : "—"}</small></div><div class="card metric"><label>BIGGEST WINNING MARGIN</label><strong>${s.highMargin.margin ?? "—"}</strong><small>${s.highMargin.name ? `${escapeHtml(s.highMargin.name)}: ${s.highMargin.winningScore}–${s.highMargin.secondScore}` : "—"}</small></div><div class="card metric"><label>HIGHEST NET WINNINGS</label><strong class="red">${s.highNet ? formatMoney(s.highNet.netWinnings) : "—"}</strong><small>${s.highNet ? `by ${escapeHtml(s.highNet.name)}` : "—"}</small></div><div class="card metric"><label>BIGGEST LOSER</label><strong>${s.biggestLoser.score ?? "—"}</strong><small>${s.biggestLoser.name ? `by ${escapeHtml(s.biggestLoser.name)}` : "—"}</small></div><div class="card metric"><label>LONGEST GAME</label><strong class="red">${s.longestGame.elapsedMs !== null ? formatGameDuration(s.longestGame.elapsedMs) : "—"}</strong><small>${s.longestGame.name ? `won by ${escapeHtml(s.longestGame.name)}` : "—"}</small></div></div>`;
         }
         function renderStatsByPlayer(s) {
             $("statsOverview").innerHTML = `<div class="card player-summary"><div class="section-title" style="margin-bottom:8px">by player</div><table class="summary-table stats-list-table"><thead><tr><th>player</th><th>games</th><th>wins</th><th>win %</th><th>total points</th><th>net winnings</th><th></th></tr></thead><tbody>${s.players.length ? s.players.map(p => `<tr><td><button class="stats-name-button" data-stats-player="${escapeHtml(p.name)}">${escapeHtml(p.name)}</button></td><td>${p.games}</td><td>${p.wins}</td><td>${Math.round(p.wins / p.games * 100)}%</td><td>${p.points}</td><td>${formatMoney(p.netWinnings)}</td><td><button class="stats-delete-button" data-hide-stats-player="${escapeHtml(p.name)}" aria-label="Hide ${escapeHtml(p.name)} from stats">✕</button></td></tr>`).join("") : '<tr><td colspan="7">No players to show.</td></tr>'}</tbody></table></div>`;
