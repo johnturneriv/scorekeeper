@@ -2780,19 +2780,25 @@
             let context = null;
             let enabled = true;
             let johnMode = false;
+            let isJohnController = false;
             const playedGames = new Set();
             const cheer = new Audio("https://usesounds.com/audio/crowd-yay-applause-25ppl-short.mp3");
             const boo = new Audio("https://cdn.pixabay.com/download/audio/2026/03/02/audio_157f6090dd.mp3?filename=dragon-studio-crowd-booing-494319.mp3");
             cheer.preload = "auto";
             boo.preload = "auto";
             try { enabled = localStorage.getItem("ginRummySoundEnabled") !== "false"; } catch {}
-            try { johnMode = localStorage.getItem("ginRummyJohnMode") === "true"; } catch {}
+            try {
+                const savedJohnMode = localStorage.getItem("ginRummyJohnMode");
+                isJohnController = savedJohnMode !== null;
+                johnMode = isJohnController && savedJohnMode === "true";
+            } catch {}
 
             function updateButtons() {
                 const soundButton = $("soundToggleButton");
                 const johnButton = $("johnModeToggleButton");
                 soundButton.textContent = `Sound: ${enabled ? "On" : "Off"}`;
                 soundButton.setAttribute("aria-pressed", String(enabled));
+                johnButton.hidden = !isJohnController;
                 johnButton.textContent = `John Mode: ${johnMode ? "On" : "Off"}`;
                 johnButton.setAttribute("aria-pressed", String(johnMode));
             }
@@ -2872,15 +2878,34 @@
                 closeMenu();
             };
             $("johnModeToggleButton").onclick = () => {
+                if (!isJohnController) return;
                 johnMode = !johnMode;
                 try { localStorage.setItem("ginRummyJohnMode", String(johnMode)); } catch {}
                 if (johnMode) unlock();
                 updateButtons();
+                broadcastJohnMode();
                 closeMenu();
             };
             updateButtons();
-            return { playWin };
+            return {
+                playWin,
+                isController: () => isJohnController,
+                isJohnModeEnabled: () => johnMode,
+                applySyncedJohnMode(value) {
+                    if (isJohnController) return;
+                    johnMode = value === true;
+                    if (johnMode) unlock();
+                }
+            };
         })();
+
+        function playDetectedWinnerSound() {
+            const winner = determineWinner();
+            if (!winner) return;
+            const hasWager = game.wager && Number(game.wager.amount) > 0;
+            const settlement = hasWager ? getWagerSettlement() : null;
+            gameSounds.playWin(game.id, winner.name, !!settlement && Number(settlement.balances[winner.id]) > 0);
+        }
 
         function showWinnerPopup() {
             const winner = determineWinner() || determineLeader();
@@ -2889,9 +2914,7 @@
             const wager = game.wager;
             const hasWager = wager && Number(wager.amount) > 0;
             const settlement = hasWager ? getWagerSettlement() : null;
-            if (determineWinner()) {
-                gameSounds.playWin(game.id, winner.name, !!settlement && Number(settlement.balances[winner.id]) > 0);
-            }
+            playDetectedWinnerSound();
 
             let moneyHtml = "";
 
@@ -3261,6 +3284,7 @@
             const input = document.querySelector(`.score-cell[data-player-id="${row.player_id}"][data-hand-index="${game.hands.indexOf(hand)}"]`);
             if (input && document.activeElement !== input) input.value = payload.eventType === "DELETE" ? "" : payload.new.score;
             updateTotalsOnly();
+            playDetectedWinnerSound();
         }
         function applyRealtimePlayer(payload) {
             const row = payload.new?.id ? payload.new : payload.old;
@@ -3306,15 +3330,33 @@
                 if (!isReorderingSavedPlayers && $("savedPlayerRows")) openPlayerListManager();
             }, 400);
         }
+        function broadcastJohnMode() {
+            if (!realtimeChannel || !gameSounds.isController()) return;
+            realtimeChannel.send({
+                type: "broadcast",
+                event: "john-mode-changed",
+                payload: { enabled: gameSounds.isJohnModeEnabled() }
+            });
+        }
         function subscribeToGame() {
             unsubscribeFromGame();
             realtimeChannel = supabaseClient.channel(`game-${game.id}`)
+                .on("broadcast", { event: "john-mode-changed" }, message => {
+                    gameSounds.applySyncedJohnMode(message.payload?.enabled === true);
+                })
+                .on("broadcast", { event: "john-mode-request" }, () => {
+                    if (gameSounds.isController()) broadcastJohnMode();
+                })
                 .on("postgres_changes", { event: "*", schema: "public", table: "games", filter: `id=eq.${game.id}` }, applyRealtimeGame)
                 .on("postgres_changes", { event: "*", schema: "public", table: "game_players", filter: `game_id=eq.${game.id}` }, applyRealtimePlayer)
                 .on("postgres_changes", { event: "*", schema: "public", table: "hands", filter: `game_id=eq.${game.id}` }, scheduleRemoteRefresh)
                 .on("postgres_changes", { event: "*", schema: "public", table: "scores" }, applyRealtimeScore)
                 .on("postgres_changes", { event: "*", schema: "public", table: "saved_players" }, refreshOpenSavedPlayerList)
-                .subscribe();
+                .subscribe(status => {
+                    if (status !== "SUBSCRIBED") return;
+                    realtimeChannel.send({ type: "broadcast", event: "john-mode-request", payload: {} });
+                    if (gameSounds.isController()) broadcastJohnMode();
+                });
         }
         async function initializeApp() {
             applyTheme(themeRepository.load());
