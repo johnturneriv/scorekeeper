@@ -1780,6 +1780,7 @@
                 <button data-action="theme">Change Theme</button>
                 <div class="menu-divider"></div>
                 <button id="soundToggleButton" data-action="sound" aria-pressed="true">Sound: On</button>
+                <button id="johnModeToggleButton" data-action="john-mode" aria-pressed="false">John Mode: Off</button>
                 <button data-action="settings">Winning Score</button>
                 <button data-action="delete" class="danger">Delete Current Game</button>
             </div>
@@ -2778,13 +2779,22 @@
         const gameSounds = (() => {
             let context = null;
             let enabled = true;
+            let johnMode = false;
             const playedGames = new Set();
+            const cheer = new Audio("https://usesounds.com/audio/crowd-yay-applause-25ppl-short.mp3");
+            const boo = new Audio("https://cdn.pixabay.com/download/audio/2026/03/02/audio_157f6090dd.mp3?filename=dragon-studio-crowd-booing-494319.mp3");
+            cheer.preload = "auto";
+            boo.preload = "auto";
             try { enabled = localStorage.getItem("ginRummySoundEnabled") !== "false"; } catch {}
+            try { johnMode = localStorage.getItem("ginRummyJohnMode") === "true"; } catch {}
 
-            function updateButton() {
-                const button = $("soundToggleButton");
-                button.textContent = `Sound: ${enabled ? "On" : "Off"}`;
-                button.setAttribute("aria-pressed", String(enabled));
+            function updateButtons() {
+                const soundButton = $("soundToggleButton");
+                const johnButton = $("johnModeToggleButton");
+                soundButton.textContent = `Sound: ${enabled ? "On" : "Off"}`;
+                soundButton.setAttribute("aria-pressed", String(enabled));
+                johnButton.textContent = `John Mode: ${johnMode ? "On" : "Off"}`;
+                johnButton.setAttribute("aria-pressed", String(johnMode));
             }
 
             function unlock() {
@@ -2795,6 +2805,17 @@
                     if (!context) context = new AudioContextClass();
                     if (context.state === "suspended") context.resume().catch(() => {});
                 } catch {}
+                [cheer, boo].forEach(audio => {
+                    if (audio.dataset.unlocked === "true") return;
+                    const originalVolume = audio.volume;
+                    audio.volume = 0;
+                    audio.play().then(() => {
+                        audio.pause();
+                        audio.currentTime = 0;
+                        audio.volume = originalVolume;
+                        audio.dataset.unlocked = "true";
+                    }).catch(() => { audio.volume = originalVolume; });
+                });
             }
 
             function tone(frequency, start, duration, volume, type = "sine") {
@@ -2812,7 +2833,7 @@
                 oscillator.stop(start + duration + 0.02);
             }
 
-            function playWin(gameId, wonMoney) {
+            function playWin(gameId, winnerName, wonMoney) {
                 if (playedGames.has(gameId)) return;
                 playedGames.add(gameId);
                 try {
@@ -2820,22 +2841,22 @@
                     if (sessionStorage.getItem(key)) return;
                     sessionStorage.setItem(key, "played");
                 } catch {}
-                if (!enabled || !context || context.state !== "running") return;
+                if (!enabled) return;
                 try {
-                    const start = context.currentTime + 0.015;
-                    if (wonMoney) {
+                    const shouldBoo = johnMode && winnerName.trim().toLowerCase() !== "john";
+                    const reaction = shouldBoo ? boo : cheer;
+                    reaction.pause();
+                    reaction.currentTime = 0;
+                    reaction.volume = shouldBoo ? 0.9 : 0.8;
+                    reaction.play().catch(() => {});
+                    if (wonMoney && !shouldBoo && context && context.state === "running") {
                         // A brief series of softly ringing metallic coin taps.
+                        const start = context.currentTime + 1.25;
                         [0, 0.075, 0.13, 0.225, 0.285].forEach((delay, index) => {
                             const base = [1760, 2093, 1568, 2349, 1976][index];
                             tone(base, start + delay, 0.2, 0.025);
                             tone(base * 1.47, start + delay, 0.12, 0.012);
                             tone(base * 2.09, start + delay, 0.07, 0.006);
-                        });
-                    } else {
-                        // A restrained three-note chime, under one second.
-                        [523.25, 659.25, 783.99].forEach((frequency, index) => {
-                            tone(frequency, start + index * 0.12, 0.38, 0.045);
-                            tone(frequency * 2, start + index * 0.12, 0.2, 0.008);
                         });
                     }
                 } catch {}
@@ -2847,10 +2868,17 @@
                 enabled = !enabled;
                 try { localStorage.setItem("ginRummySoundEnabled", String(enabled)); } catch {}
                 if (enabled) unlock();
-                updateButton();
+                updateButtons();
                 closeMenu();
             };
-            updateButton();
+            $("johnModeToggleButton").onclick = () => {
+                johnMode = !johnMode;
+                try { localStorage.setItem("ginRummyJohnMode", String(johnMode)); } catch {}
+                if (johnMode) unlock();
+                updateButtons();
+                closeMenu();
+            };
+            updateButtons();
             return { playWin };
         })();
 
@@ -2862,7 +2890,7 @@
             const hasWager = wager && Number(wager.amount) > 0;
             const settlement = hasWager ? getWagerSettlement() : null;
             if (determineWinner()) {
-                gameSounds.playWin(game.id, !!settlement && Number(settlement.balances[winner.id]) > 0);
+                gameSounds.playWin(game.id, winner.name, !!settlement && Number(settlement.balances[winner.id]) > 0);
             }
 
             let moneyHtml = "";
