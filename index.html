@@ -147,6 +147,11 @@
             background: var(--soft)
         }
 
+        .menu-architect,
+        .menu-measure {
+            display: none
+        }
+
         .game-menu {
             position: absolute;
             z-index: 50;
@@ -1544,16 +1549,6 @@
             color: var(--navy)
         }
 
-        body[data-theme="architect"]:before {
-            content: "";
-            position: fixed;
-            z-index: 0;
-            inset: 0;
-            pointer-events: none;
-            opacity: .25;
-            background: center top / 1180px 880px repeat-y url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1180' height='880' viewBox='0 0 1180 880'%3E%3Cg fill='none' stroke='%234b514e' stroke-width='1.35'%3E%3Crect x='32' y='174' width='118' height='166' rx='7' transform='rotate(-7 91 257)'/%3E%3Crect x='63' y='151' width='118' height='166' rx='7' transform='rotate(5 122 234)'/%3E%3Cpath d='M24 132h168M24 127v10M192 127v10M204 151v166M199 151h10M199 317h10'/%3E%3Crect x='996' y='530' width='118' height='166' rx='7' transform='rotate(8 1055 613)'/%3E%3Cpath d='M980 720h150M980 715v10M1130 715v10M970 520v190M965 520h10M965 710h10'/%3E%3Cpath d='M64 410h250M864 192h270M48 746h305M858 792h274' stroke-dasharray='3 5'/%3E%3C/g%3E%3Cg fill='%234b514e' font-family='Arial' font-size='11' letter-spacing='1'%3E%3Ctext x='62' y='238' font-size='25'%3EA%E2%99%A0%3C/text%3E%3Ctext x='1019' y='614' font-size='25'%3EK%E2%99%A6%3C/text%3E%3Ctext x='71' y='120'%3ECARD WIDTH 2.50 IN%3C/text%3E%3Ctext x='214' y='246' transform='rotate(90 214 246)'%3ECARD HEIGHT 3.50 IN%3C/text%3E%3Ctext x='49' y='399'%3EPRIMARY OBJECTIVE: MAXIMIZE CUMULATIVE SCORE%3C/text%3E%3Ctext x='866' y='181'%3ERANK ORDER: DESCENDING TOTAL%3C/text%3E%3Ctext x='49' y='735'%3ETARGET THRESHOLD: 500 POINTS%3C/text%3E%3Ctext x='860' y='781'%3EHIGHER TOTAL CONTROLS FINAL POSITION%3C/text%3E%3Ctext x='1020' y='744'%3E2.50 IN%3C/text%3E%3Ctext x='946' y='620' transform='rotate(90 946 620)'%3E3.50 IN%3C/text%3E%3C/g%3E%3C/svg%3E")
-        }
-
         body[data-theme="architect"] .app {
             position: relative;
             z-index: 1
@@ -1690,6 +1685,86 @@
         body[data-theme="architect"] .menu-button:hover {
             background: var(--soft)
         }
+
+        body[data-theme="architect"] .menu-button {
+            top: 27px;
+            right: 12px;
+            width: 62px;
+            height: 38px;
+            overflow: visible;
+            border: 1px solid var(--navy);
+            border-radius: 0;
+            background: rgba(239, 238, 232, .75);
+            font-size: 0;
+            box-shadow: 3px 3px 0 rgba(48, 53, 52, .10)
+        }
+
+        body[data-theme="architect"] .menu-default {
+            display: none
+        }
+
+        body[data-theme="architect"] .menu-architect {
+            display: block;
+            font-family: "Arial Narrow", Inter, sans-serif;
+            font-size: 11px;
+            font-weight: 900;
+            letter-spacing: .12em
+        }
+
+        body[data-theme="architect"] .menu-measure {
+            display: block;
+            position: absolute;
+            color: var(--muted);
+            font-family: "Segoe Print", "Bradley Hand", cursive;
+            font-size: 8px;
+            font-weight: 500;
+            line-height: 1;
+            pointer-events: none
+        }
+
+        body[data-theme="architect"] .menu-measure:before,
+        body[data-theme="architect"] .menu-measure:after {
+            content: "";
+            position: absolute;
+            background: var(--muted)
+        }
+
+        body[data-theme="architect"] .menu-measure-width {
+            left: 0;
+            top: -15px;
+            width: 62px;
+            padding-top: 3px;
+            border-top: 1px solid var(--muted)
+        }
+
+        body[data-theme="architect"] .menu-measure-width:before,
+        body[data-theme="architect"] .menu-measure-width:after {
+            top: -3px;
+            width: 1px;
+            height: 7px
+        }
+
+        body[data-theme="architect"] .menu-measure-width:before { left: 0 }
+        body[data-theme="architect"] .menu-measure-width:after { right: 0 }
+
+        body[data-theme="architect"] .menu-measure-height {
+            right: -15px;
+            top: 0;
+            height: 38px;
+            padding-left: 3px;
+            border-left: 1px solid var(--muted);
+            writing-mode: vertical-rl
+        }
+
+        body[data-theme="architect"] .menu-measure-height:before,
+        body[data-theme="architect"] .menu-measure-height:after {
+            left: -3px;
+            width: 7px;
+            height: 1px
+        }
+
+        body[data-theme="architect"] .menu-measure-height:before { top: 0 }
+        body[data-theme="architect"] .menu-measure-height:after { bottom: 0 }
 
         body[data-theme="architect"] #scorePage > .page-heading {
             display: grid;
@@ -1873,8 +1948,7 @@
         }
 
         body[data-theme="architect"] .leader-icon {
-            filter: none;
-            opacity: 1
+            display: none
         }
 
         body[data-theme="architect"] .add-player-bottom,
@@ -2208,7 +2282,12 @@
                 <div class="brand-name">Gin <span class="red">500</span></div>
                 <div class="brand-sub">GIN RUMMY</div>
             </div>
-            <button id="menuButton" class="menu-button" type="button" aria-label="Game menu">☰</button>
+            <button id="menuButton" class="menu-button" type="button" aria-label="Game menu">
+                <span class="menu-default">☰</span>
+                <span class="menu-architect">MENU</span>
+                <span class="menu-measure menu-measure-width">1 3/4&quot;</span>
+                <span class="menu-measure menu-measure-height">1&quot;</span>
+            </button>
             <div id="gameMenu" class="game-menu hidden">
                 <div id="menuGameCode" class="game-code-display">GAME -----</div>
                 <button data-action="join">Join Game</button>
@@ -2280,7 +2359,7 @@
         const SUPABASE_URL = "https://anytokbzwcqtjgurwikv.supabase.co";
         const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_M0WZYzUogTWROcl3egGAJg_X0G997_t";
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
-        const APP_CONFIG = { minPlayers: 2, maxPlayers: 8, defaultWinningScore: 500, initialVisibleHands: 5 };
+        const APP_CONFIG = { minPlayers: 2, maxPlayers: 8, defaultWinningScore: 500, initialVisibleHands: 4 };
         const DEFAULT_SAVED_PLAYERS = [];
         function createId() { return typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).slice(2) }
         function createEmptyHand() { return { id: createId(), scores: {} } }
@@ -2449,7 +2528,7 @@
 
         function openThemePicker() {
             const current = themeRepository.load();
-            openModal(`<div class="modal-head"><h3>change theme</h3><button class="close-btn" data-close-modal>×</button></div><div class="theme-options"><button class="theme-choice ${current === "classic" ? "active" : ""}" data-theme-choice="classic">Classic</button><button class="theme-choice ${current === "poker" ? "active" : ""}" data-theme-choice="poker">Poker Night</button><button class="theme-choice ${current === "tropical" ? "active" : ""}" data-theme-choice="tropical">Tropical</button><button class="theme-choice ${current === "architect" ? "active" : ""}" data-theme-choice="architect">Architect</button></div>`);
+            openModal(`<div class="modal-head"><h3>change theme</h3><button class="close-btn" data-close-modal>×</button></div><div class="theme-options"><button class="theme-choice ${current === "classic" ? "active" : ""}" data-theme-choice="classic">Classic</button><button class="theme-choice ${current === "poker" ? "active" : ""}" data-theme-choice="poker">Poker Night</button><button class="theme-choice ${current === "tropical" ? "active" : ""}" data-theme-choice="tropical">Tropical</button><button class="theme-choice ${current === "architect" ? "active" : ""}" data-theme-choice="architect">Architectural</button></div>`);
             modalCard.querySelector("[data-close-modal]").onclick = closeModal;
             modalCard.querySelectorAll("[data-theme-choice]").forEach(button => button.onclick = () => {
                 applyTheme(button.dataset.themeChoice);
@@ -2560,9 +2639,32 @@
             };
         }
 
-        function openDealerPicker() {
+        async function openDealerPicker() {
             if (game.status === "finished") return showMessage("The dealer cannot be changed after the game ends.");
-            openModal(`<div class="modal-head"><h3>current dealer</h3><button class="close-btn" data-close-modal>×</button></div><div class="muted" style="line-height:1.5;margin-bottom:12px">Select the dealer for the current hand. Automatic rotation will continue from this player.</div>${game.players.map(player => `<button class="manual-name" data-dealer-id="${player.id}">${escapeHtml(player.name)}${player.id === game.dealerId ? " · CURRENT" : ""}</button>`).join("")}`);
+            const namedPlayers = game.players.filter(isPlayerNamed);
+
+            if (!namedPlayers.length) {
+                const gameId = game.id;
+                const saved = await playerRepository.load();
+                if (game.id !== gameId) return;
+                openModal(`<div class="modal-head"><h3>choose first player</h3><button class="close-btn" data-close-modal>×</button></div><div class="muted" style="line-height:1.5;margin-bottom:12px">The selected player will be placed in column one and set as the current dealer.</div><div>${saved.length ? saved.map(player => `<div class="saved-player"><button class="saved-player-name" data-first-dealer-player="${player.id}">${escapeHtml(player.name)}</button></div>`).join("") : '<div class="empty-state">No saved players yet.</div>'}</div><button class="manual-name" id="addNewDealerPlayer">add new player</button>`);
+                modalCard.querySelector("[data-close-modal]").onclick = closeModal;
+                modalCard.querySelectorAll("[data-first-dealer-player]").forEach(button => {
+                    button.onclick = async () => {
+                        const selected = saved.find(player => player.id === button.dataset.firstDealerPlayer);
+                        if (selected) await assignFirstPlayerAsDealer(selected.name, gameId);
+                    };
+                });
+                $("addNewDealerPlayer").onclick = async () => {
+                    const name = prompt("Player name:")?.trim();
+                    if (!name) return;
+                    await playerRepository.add(name);
+                    await assignFirstPlayerAsDealer(name, gameId);
+                };
+                return;
+            }
+
+            openModal(`<div class="modal-head"><h3>current dealer</h3><button class="close-btn" data-close-modal>×</button></div><div class="muted" style="line-height:1.5;margin-bottom:12px">Select the dealer for the current hand. Automatic rotation will continue from this player.</div>${namedPlayers.map(player => `<button class="manual-name" data-dealer-id="${player.id}">${escapeHtml(player.name)}${player.id === game.dealerId ? " · CURRENT" : ""}</button>`).join("")}`);
             modalCard.querySelector("[data-close-modal]").onclick = closeModal;
             modalCard.querySelectorAll("[data-dealer-id]").forEach(button => {
                 button.onclick = async () => {
@@ -2575,6 +2677,19 @@
                     showMessage(`${selectedPlayer.name} is the current dealer.`);
                 };
             });
+        }
+
+        async function assignFirstPlayerAsDealer(name, gameId) {
+            if (game.id !== gameId || !game.players[0]) return;
+            const firstPlayer = game.players[0];
+            firstPlayer.name = name.trim();
+            game.dealerId = firstPlayer.id;
+            await gameRepository.updatePlayer(firstPlayer, firstPlayer.position ?? 0);
+            game = await gameRepository.save(game);
+            closeModal();
+            renderGame();
+            scheduleGameTimerStart(firstPlayer.id);
+            showMessage(`${firstPlayer.name} added as the current dealer.`);
         }
 
         function activateArchitectInfoPanel(selector, action) {
@@ -2696,7 +2811,16 @@
         }
 
         function renderHands(container) {
-            game.hands.forEach((hand, handIndex) => {
+            const lastUsedHandIndex = game.hands.reduce((lastIndex, hand, handIndex) => {
+                const hasScore = game.players.some(player => hand.scores[player.id] !== undefined && hand.scores[player.id] !== null && hand.scores[player.id] !== "");
+                return hasScore ? handIndex : lastIndex;
+            }, -1);
+            const visibleHandCount = Math.min(
+                game.hands.length,
+                Math.max(APP_CONFIG.initialVisibleHands, lastUsedHandIndex + 2)
+            );
+
+            game.hands.slice(0, visibleHandCount).forEach((hand, handIndex) => {
                 const row = document.createElement("div");
                 row.className = "hand-row";
 
