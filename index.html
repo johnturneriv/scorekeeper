@@ -1770,7 +1770,7 @@
             display: grid;
             grid-template-columns: repeat(3, minmax(0, 1fr));
             gap: 9px;
-            margin: 16px 0 12px
+            margin: 12px 0 10px
         }
 
         body[data-theme="architect"] #scorePage .heading-actions {
@@ -1780,8 +1780,8 @@
         body[data-theme="architect"] #scorePage .info-panel {
             display: flex;
             min-width: 0;
-            min-height: 68px;
-            padding: 10px 8px;
+            min-height: 52px;
+            padding: 6px 7px;
             align-items: center;
             justify-content: center;
             flex-direction: column;
@@ -1810,7 +1810,7 @@
         }
 
         body[data-theme="architect"] #scorePage .info-label {
-            margin-bottom: 7px;
+            margin-bottom: 4px;
             color: var(--muted);
             font-size: 8px;
             font-weight: 800;
@@ -2018,7 +2018,7 @@
             }
 
             body[data-theme="architect"] #scorePage .info-panel {
-                min-height: 64px;
+                min-height: 50px;
                 padding-left: 4px;
                 padding-right: 4px
             }
@@ -3488,7 +3488,7 @@
                 updateButtons();
                 closeMenu();
             };
-            $("johnModeToggleButton").onclick = () => {
+            function toggleJohnMode() {
                 if (!isJohnController) return;
                 johnMode = !johnMode;
                 try { localStorage.setItem("ginRummyJohnMode", String(johnMode)); } catch { }
@@ -3496,10 +3496,11 @@
                 updateButtons();
                 broadcastJohnMode();
                 closeMenu();
-            };
+            }
             updateButtons();
             return {
                 playWin,
+                toggleJohnMode,
                 isController: () => isJohnController,
                 isJohnModeEnabled: () => johnMode,
                 applySyncedJohnMode(value) {
@@ -3663,6 +3664,7 @@
             else if (a === "players") openPlayerListManager();
             else if (a === "remove-player") removePlayer();
             else if (a === "theme") openThemePicker();
+            else if (a === "john-mode") gameSounds.toggleJohnMode();
             else if (a === "settings") openSettings();
             else if (a === "delete") await deleteGame();
         }
@@ -3770,6 +3772,15 @@
                 .filter(([key]) => !hidden.has(key))
                 .map(([, value]) => value)
                 .sort((a, b) => b.wins - a.wins);
+            const totalPlayerGames = players.reduce((total, player) => total + player.games, 0);
+            const totalWins = players.reduce((total, player) => total + player.wins, 0);
+            const overallWinRate = totalPlayerGames ? totalWins / totalPlayerGames : 0;
+            const priorGames = 5;
+            players.forEach(player => {
+                player.adjustedWinPercentage = Math.round(
+                    ((player.wins + overallWinRate * priorGames) / (player.games + priorGames)) * 100
+                );
+            });
             const highNet = players.reduce((best, p) => !best || p.netWinnings > best.netWinnings ? p : best, null);
 
 
@@ -3795,7 +3806,7 @@
             $("statsOverview").innerHTML = `<div class="stats-grid"><div class="card metric"><label>HIGHEST GAME SCORE</label><strong>${s.highGame.score ?? "—"}</strong><small>${s.highGame.name ? `by ${escapeHtml(s.highGame.name)}` : "—"}</small></div><div class="card metric"><label>TOP PLAYER</label><strong class="red">${top?.name || "—"}</strong><small>${top ? `${top.wins} wins` : "no games yet"}</small></div><div class="card metric"><label>LOWEST HAND</label><strong>${s.low.score ?? "—"}</strong><small>${s.low.name ? `by ${escapeHtml(s.low.name)}` : "—"}</small></div><div class="card metric"><label>HIGHEST HAND</label><strong class="red">${s.high.score ?? "—"}</strong><small>${s.high.name ? `by ${escapeHtml(s.high.name)}` : "—"}</small></div><div class="card metric"><label>BIGGEST WINNING MARGIN</label><strong>${s.highMargin.margin ?? "—"}</strong><small>${s.highMargin.name ? `${escapeHtml(s.highMargin.name)}: ${s.highMargin.winningScore}–${s.highMargin.secondScore}` : "—"}</small></div><div class="card metric"><label>HIGHEST NET WINNINGS</label><strong class="red">${s.highNet ? formatMoney(s.highNet.netWinnings) : "—"}</strong><small>${s.highNet ? `by ${escapeHtml(s.highNet.name)}` : "—"}</small></div><div class="card metric"><label>BIGGEST LOSER</label><strong>${s.biggestLoser.score ?? "—"}</strong><small>${s.biggestLoser.name ? `by ${escapeHtml(s.biggestLoser.name)}` : "—"}</small></div><div class="card metric"><label>LONGEST GAME</label><strong class="red">${s.longestGame.elapsedMs !== null ? formatGameDuration(s.longestGame.elapsedMs) : "—"}</strong><small>${s.longestGame.name ? `won by ${escapeHtml(s.longestGame.name)}` : "—"}</small></div></div>`;
         }
         function renderStatsByPlayer(s) {
-            $("statsOverview").innerHTML = `<div class="card player-summary"><div class="section-title" style="margin-bottom:8px">by player</div><table class="summary-table stats-list-table"><thead><tr><th>player</th><th>games</th><th>wins</th><th>win %</th><th>total points</th><th>net winnings</th><th></th></tr></thead><tbody>${s.players.length ? s.players.map(p => `<tr><td><button class="stats-name-button" data-stats-player="${escapeHtml(p.name)}">${escapeHtml(p.name)}</button></td><td>${p.games}</td><td>${p.wins}</td><td>${Math.round(p.wins / p.games * 100)}%</td><td>${p.points}</td><td>${formatMoney(p.netWinnings)}</td><td><button class="stats-delete-button" data-hide-stats-player="${escapeHtml(p.name)}" aria-label="Hide ${escapeHtml(p.name)} from stats">✕</button></td></tr>`).join("") : '<tr><td colspan="7">No players to show.</td></tr>'}</tbody></table></div>`;
+            $("statsOverview").innerHTML = `<div class="card player-summary"><div class="section-title" style="margin-bottom:8px">by player</div><table class="summary-table stats-list-table"><thead><tr><th>player</th><th>games</th><th>wins</th><th title="Adjusted for number of games played">adj. win %</th><th>total points</th><th>net winnings</th><th></th></tr></thead><tbody>${s.players.length ? s.players.map(p => `<tr><td><button class="stats-name-button" data-stats-player="${escapeHtml(p.name)}">${escapeHtml(p.name)}</button></td><td>${p.games}</td><td>${p.wins}</td><td>${p.adjustedWinPercentage}%</td><td>${p.points}</td><td>${formatMoney(p.netWinnings)}</td><td><button class="stats-delete-button" data-hide-stats-player="${escapeHtml(p.name)}" aria-label="Hide ${escapeHtml(p.name)} from stats">✕</button></td></tr>`).join("") : '<tr><td colspan="7">No players to show.</td></tr>'}</tbody></table></div>`;
             $("statsOverview").querySelectorAll("[data-stats-player]").forEach(button => button.onclick = () => showPlayerWinnings(button.dataset.statsPlayer, s));
             $("statsOverview").querySelectorAll("[data-hide-stats-player]").forEach(button => button.onclick = () => hideStatsPlayer(button.dataset.hideStatsPlayer));
         }
