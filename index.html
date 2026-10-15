@@ -376,7 +376,14 @@
             font-size: 24px;
             font-style: normal;
             font-weight: 700;
-            letter-spacing: .02em
+            letter-spacing: .02em;
+            text-align: left;
+            padding-right: 132px
+        }
+
+        .winner-popup.john-disapproved .winner-score {
+            text-align: left;
+            padding-right: 132px
         }
 
         .winner-popup.john-disapproved .winner-score,
@@ -405,16 +412,97 @@
             padding: 8px 11px 7px;
             border: 4px double #a12d27;
             color: #a12d27;
-            background: rgba(255, 255, 255, .68);
+            background: rgba(255, 255, 255, .94);
             font-family: "Arial Narrow", Inter, sans-serif;
             font-size: 13px;
             font-weight: 900;
             line-height: 1.15;
             letter-spacing: .08em;
-            opacity: .76;
+            opacity: 1;
             text-align: center;
             text-transform: uppercase;
             transform: rotate(7deg)
+        }
+
+        body[data-theme="classic"] .winner-popup:not(.john-disapproved) .winner-title {
+            font-family: "Cormorant Garamond", serif;
+            font-style: italic
+        }
+
+        body[data-theme="poker"] .winner-popup:not(.john-disapproved) .winner-title {
+            font-family: Georgia, "Times New Roman", serif;
+            font-style: normal;
+            font-weight: 800;
+            letter-spacing: .055em
+        }
+
+        body[data-theme="tropical"] .winner-popup:not(.john-disapproved) .winner-title {
+            font-family: "Arial Rounded MT Bold", Inter, system-ui, sans-serif;
+            font-style: normal;
+            font-weight: 900;
+            letter-spacing: .025em
+        }
+
+        body[data-theme="architect"] .winner-popup:not(.john-disapproved) .winner-title {
+            font-family: "Arial Narrow", Inter, system-ui, sans-serif;
+            font-style: normal;
+            font-weight: 900;
+            letter-spacing: .10em;
+            text-transform: uppercase
+        }
+
+        body .winner-popup.john-triumph .winner-title {
+            font-size: clamp(36px, 10vw, 48px);
+            line-height: 1.08;
+            color: var(--red);
+            text-shadow: 2px 2px 0 rgba(168, 134, 69, .30);
+            animation: johnVictoryPulse .72s ease-in-out 2 alternate
+        }
+
+        .winner-popup.john-triumph .winner-score {
+            color: var(--navy);
+            font-size: 15px;
+            font-weight: 900
+        }
+
+        .winner-popup.john-triumph .winner-done {
+            background: var(--gold);
+            color: var(--navy)
+        }
+
+        .winner-popup.john-triumph > :not(.john-confetti) {
+            position: relative;
+            z-index: 2
+        }
+
+        .john-confetti {
+            position: fixed;
+            z-index: 1;
+            inset: 0;
+            overflow: hidden;
+            pointer-events: none
+        }
+
+        .john-confetti i {
+            position: absolute;
+            top: -24px;
+            left: var(--x);
+            width: 9px;
+            height: 16px;
+            border-radius: 2px;
+            background: var(--c);
+            transform: rotate(var(--r));
+            animation: johnConfettiFall var(--t) linear var(--d) forwards
+        }
+
+        @keyframes johnConfettiFall {
+            0% { transform: translate3d(0, -5vh, 0) rotate(0deg) }
+            100% { transform: translate3d(var(--drift), 112vh, 0) rotate(760deg) }
+        }
+
+        @keyframes johnVictoryPulse {
+            from { transform: scale(1) rotate(-1deg) }
+            to { transform: scale(1.06) rotate(1deg) }
         }
 
         .winner-title {
@@ -2437,7 +2525,6 @@
         const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_M0WZYzUogTWROcl3egGAJg_X0G997_t";
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
         const APP_CONFIG = { minPlayers: 2, maxPlayers: 8, defaultWinningScore: 500, initialVisibleHands: 4 };
-        const JOHN_MODE_PIN = "1018";
         const DEFAULT_SAVED_PLAYERS = [];
         function createId() { return typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).slice(2) }
         function createEmptyHand() { return { id: createId(), scores: {} } }
@@ -3494,13 +3581,7 @@
                 if (statsButton) statsButton.textContent = johnMode ? "STATS 🔥" : "STATS";
             }
 
-            function authorizeJohnMode() {
-                const enteredPin = prompt("Enter John Mode code:");
-                if (enteredPin === null) return;
-                if (enteredPin.trim() !== JOHN_MODE_PIN) {
-                    showMessage("Incorrect John Mode code.");
-                    return;
-                }
+            function toggleJohnModeFromLogo() {
                 isJohnController = true;
                 try { localStorage.setItem("ginRummyJohnModeAuthorized", "true"); } catch { }
                 johnMode = !johnMode;
@@ -3608,7 +3689,7 @@
             return {
                 playWin,
                 resetJohnMode,
-                authorizeJohnMode,
+                toggleJohnModeFromLogo,
                 isController: () => isJohnController,
                 isJohnModeEnabled: () => johnMode,
                 applySyncedJohnMode(value) {
@@ -3620,22 +3701,19 @@
             };
         })();
 
-        function enableJohnModeUnlock() {
+        function enableJohnModeLogoHold() {
             const brand = document.querySelector(".brand");
             if (!brand) return;
             let holdTimer = null;
-            let unlockedThisPress = false;
             const cancelHold = () => {
                 clearTimeout(holdTimer);
                 holdTimer = null;
             };
             brand.addEventListener("pointerdown", event => {
                 if (event.pointerType === "mouse" && event.button !== 0) return;
-                unlockedThisPress = false;
                 cancelHold();
                 holdTimer = setTimeout(() => {
-                    unlockedThisPress = true;
-                    gameSounds.authorizeJohnMode();
+                    gameSounds.toggleJohnModeFromLogo();
                 }, 1500);
             });
             brand.addEventListener("pointerup", cancelHold);
@@ -3652,10 +3730,26 @@
             gameSounds.playWin(game.id, winner.name, !!settlement && Number(settlement.balances[winner.id]) > 0);
         }
 
+        function renderJohnConfetti() {
+            const colors = ["#b5231d", "#c49332", "#1f6f58", "#264f87", "#f0d86b"];
+            const pieces = Array.from({ length: 34 }, (_, index) => {
+                const x = (index * 29) % 100;
+                const delay = ((index * 7) % 18) / 10;
+                const duration = 2.7 + ((index * 11) % 16) / 10;
+                const rotation = (index * 47) % 180;
+                const drift = `${((index % 7) - 3) * 13}px`;
+                return `<i style="--x:${x}%;--d:${delay}s;--t:${duration}s;--r:${rotation}deg;--drift:${drift};--c:${colors[index % colors.length]}"></i>`;
+            }).join("");
+            return `<div class="john-confetti" aria-hidden="true">${pieces}</div>`;
+        }
+
         function showWinnerPopup() {
             const winner = determineWinner() || determineLeader();
             if (!winner) return;
-            const johnDisapproved = gameSounds.isJohnModeEnabled() && winner.name.trim().toLowerCase() !== "john";
+            const johnModeActive = gameSounds.isJohnModeEnabled();
+            const johnWon = winner.name.trim().toLowerCase() === "john";
+            const johnDisapproved = johnModeActive && !johnWon;
+            const johnTriumph = johnModeActive && johnWon;
 
             const wager = game.wager;
             const hasWager = wager && Number(wager.amount) > 0;
@@ -3713,14 +3807,15 @@
             }
 
             openModal(`
-        <div class="winner-popup${johnDisapproved ? " john-disapproved" : ""}">
+        <div class="winner-popup${johnDisapproved ? " john-disapproved" : ""}${johnTriumph ? " john-triumph" : ""}">
+            ${johnTriumph ? renderJohnConfetti() : ""}
             ${johnDisapproved ? '<div class="john-protest-stamp">Result accepted<br>under protest</div>' : ""}
-            <div class="winner-title">${escapeHtml(winner.name)} ${johnDisapproved ? "wins." : "WINS!"}</div>
-            <div class="winner-score">${johnDisapproved ? `Final score...${getPlayerTotal(winner.id)} 😒` : `Final score: ${getPlayerTotal(winner.id)}`}</div>
+            <div class="winner-title">${johnTriumph ? "👑 JOHN WINS!!! 🔥" : `${escapeHtml(winner.name)} ${johnDisapproved ? "wins." : "WINS!"}`}</div>
+            <div class="winner-score">${johnDisapproved ? `Final score...${getPlayerTotal(winner.id)} 😒` : johnTriumph ? `FINAL SCORE: ${getPlayerTotal(winner.id)} 🏆 — AS DESIGNED` : `Final score: ${getPlayerTotal(winner.id)}`}</div>
 
             ${moneyHtml}
 
-            <button id="winnerDone" class="winner-done">${johnDisapproved ? "DONE 🙄" : "DONE"}</button>
+            <button id="winnerDone" class="winner-done">${johnDisapproved ? "DONE 🙄" : johnTriumph ? "VICTORY CONFIRMED 😎" : "DONE"}</button>
         </div>
     `);
 
@@ -4138,7 +4233,7 @@
         $("finishButton").onclick = finishGame;
         $("gameTimer").onclick = openTimerControls;
         $("addPlayerButton").onclick = addPlayer;
-        enableJohnModeUnlock();
+        enableJohnModeLogoHold();
         activateArchitectInfoPanel(".dealer-panel", openDealerPicker);
         activateArchitectInfoPanel(".timer-panel", () => $("gameTimer").click());
         activateArchitectInfoPanel(".wager-panel", () => $("wagerDisplay").click());
