@@ -3471,13 +3471,13 @@
             let enabled = true;
             let johnMode = false;
             let isJohnController = false;
-            let mediaUnlockAttempted = false;
-            let winnerPlaybackStarted = false;
+            let reactionLoadPromise = null;
+            let reactionBuffers = null;
             const playedGames = new Set();
-            const cheer = new Audio("https://usesounds.com/audio/crowd-yay-applause-25ppl-short.mp3");
-            const boo = new Audio("https://cdn.pixabay.com/download/audio/2026/03/02/audio_157f6090dd.mp3?filename=dragon-studio-crowd-booing-494319.mp3");
-            cheer.preload = "auto";
-            boo.preload = "auto";
+            const reactionUrls = {
+                cheer: "https://usesounds.com/audio/crowd-yay-applause-25ppl-short.mp3",
+                boo: "https://cdn.pixabay.com/download/audio/2026/03/02/audio_157f6090dd.mp3?filename=dragon-studio-crowd-booing-494319.mp3"
+            };
             try { enabled = localStorage.getItem("ginRummySoundEnabled") !== "false"; } catch { }
             try {
                 const savedJohnMode = localStorage.getItem("ginRummyJohnMode");
@@ -3519,19 +3519,24 @@
                     if (!context) context = new AudioContextClass();
                     if (context.state === "suspended") context.resume().catch(() => { });
                 } catch { }
-                if (mediaUnlockAttempted) return;
-                mediaUnlockAttempted = true;
-                [cheer, boo].forEach(audio => {
-                    audio.muted = true;
-                    audio.play().then(() => {
-                        if (!winnerPlaybackStarted) {
-                            audio.pause();
-                            audio.currentTime = 0;
-                        }
-                        audio.muted = false;
-                        audio.dataset.unlocked = "true";
-                    }).catch(() => { audio.muted = false; });
-                });
+                loadReactionBuffers();
+            }
+
+            function loadReactionBuffers() {
+                if (!context) return Promise.resolve(null);
+                if (reactionBuffers) return Promise.resolve(reactionBuffers);
+                if (reactionLoadPromise) return reactionLoadPromise;
+                reactionLoadPromise = Promise.all(Object.entries(reactionUrls).map(async ([name, url]) => {
+                    const response = await fetch(url, { mode: "cors", cache: "force-cache" });
+                    if (!response.ok) throw new Error(`Could not load ${name} sound.`);
+                    const audioData = await response.arrayBuffer();
+                    const buffer = await context.decodeAudioData(audioData.slice(0));
+                    return [name, buffer];
+                })).then(entries => {
+                    reactionBuffers = Object.fromEntries(entries);
+                    return reactionBuffers;
+                }).catch(() => null);
+                return reactionLoadPromise;
             }
 
             function tone(frequency, start, duration, volume, type = "sine") {
@@ -3549,7 +3554,7 @@
                 oscillator.stop(start + duration + 0.02);
             }
 
-            function playWin(gameId, winnerName, wonMoney) {
+            async function playWin(gameId, winnerName, wonMoney) {
                 if (playedGames.has(gameId)) return;
                 playedGames.add(gameId);
                 try {
@@ -3559,16 +3564,19 @@
                 } catch { }
                 if (!enabled) return;
                 try {
-                    winnerPlaybackStarted = true;
+                    unlock();
+                    const buffers = await loadReactionBuffers();
+                    if (!buffers || !context || context.state !== "running") return;
                     const shouldBoo = johnMode && winnerName.trim().toLowerCase() !== "john";
-                    const reaction = shouldBoo ? boo : cheer;
-                    cheer.pause();
-                    boo.pause();
-                    reaction.muted = false;
-                    reaction.currentTime = 0;
-                    reaction.volume = shouldBoo ? 0.9 : 0.8;
-                    reaction.play().catch(() => { });
-                    if (wonMoney && !shouldBoo && context && context.state === "running") {
+                    const source = context.createBufferSource();
+                    const gain = context.createGain();
+                    source.buffer = shouldBoo ? buffers.boo : buffers.cheer;
+                    gain.gain.value = shouldBoo ? 0.9 : 0.8;
+                    source.connect(gain);
+                    gain.connect(context.destination);
+                    source.onended = () => { source.disconnect(); gain.disconnect(); };
+                    source.start();
+                    if (wonMoney && !shouldBoo) {
                         // A brief series of softly ringing metallic coin taps.
                         const start = context.currentTime + 1.25;
                         [0, 0.075, 0.13, 0.225, 0.285].forEach((delay, index) => {
