@@ -361,7 +361,59 @@
         }
 
         .winner-popup {
+            position: relative;
             text-align: center;
+        }
+
+        .winner-popup.john-disapproved {
+            color: #5f625f
+        }
+
+        .winner-popup.john-disapproved .winner-title {
+            margin-top: 10px;
+            color: #555957;
+            font-family: Inter, system-ui, sans-serif;
+            font-size: 24px;
+            font-style: normal;
+            font-weight: 700;
+            letter-spacing: .02em
+        }
+
+        .winner-popup.john-disapproved .winner-score,
+        .winner-popup.john-disapproved .winner-money-label,
+        .winner-popup.john-disapproved .settlement-title,
+        .winner-popup.john-disapproved .winner-money-total {
+            color: #6c706d
+        }
+
+        .winner-popup.john-disapproved .winner-money {
+            border-color: #b8bbb8;
+            background: #ededeb;
+            box-shadow: none
+        }
+
+        .winner-popup.john-disapproved .winner-done {
+            background: #666a67;
+            color: #f1f1ef
+        }
+
+        .john-protest-stamp {
+            position: absolute;
+            z-index: 2;
+            top: -15px;
+            right: -10px;
+            padding: 5px 7px 4px;
+            border: 3px double #a12d27;
+            color: #a12d27;
+            background: rgba(255, 255, 255, .88);
+            font-family: "Arial Narrow", Inter, sans-serif;
+            font-size: 8px;
+            font-weight: 900;
+            line-height: 1.15;
+            letter-spacing: .08em;
+            text-align: center;
+            text-transform: uppercase;
+            transform: rotate(7deg)
         }
 
         .winner-title {
@@ -1783,6 +1835,7 @@
         body[data-theme="architect"] #scorePage .info-panel {
             display: flex;
             min-width: 0;
+            height: 52px;
             min-height: 52px;
             padding: 6px 7px;
             align-items: center;
@@ -1908,6 +1961,18 @@
             font-weight: 600
         }
 
+        body[data-theme="architect"] .hand-row,
+        body[data-theme="architect"] .total-row {
+            height: 52px
+        }
+
+        body[data-theme="architect"] .score-cell-wrap,
+        body[data-theme="architect"] .score-cell,
+        body[data-theme="architect"] .total-cell,
+        body[data-theme="architect"] .total-spacer {
+            height: 100%
+        }
+
         body[data-theme="architect"] .score-cell::placeholder {
             color: rgba(48, 53, 52, .30)
         }
@@ -1934,6 +1999,9 @@
         }
 
         body[data-theme="architect"] .total-cell {
+            display: grid;
+            place-items: center;
+            padding: 0;
             border-left: 1px solid var(--line);
             font-family: "Segoe Print", "Bradley Hand", cursive;
             font-weight: 700
@@ -2021,9 +2089,15 @@
             }
 
             body[data-theme="architect"] #scorePage .info-panel {
+                height: 50px;
                 min-height: 50px;
                 padding-left: 4px;
                 padding-right: 4px
+            }
+
+            body[data-theme="architect"] .hand-row,
+            body[data-theme="architect"] .total-row {
+                height: 50px
             }
 
             body[data-theme="architect"] #scorePage .dealer-display,
@@ -3396,6 +3470,8 @@
             let enabled = true;
             let johnMode = false;
             let isJohnController = false;
+            let mediaUnlockAttempted = false;
+            let winnerPlaybackStarted = false;
             const playedGames = new Set();
             const cheer = new Audio("https://usesounds.com/audio/crowd-yay-applause-25ppl-short.mp3");
             const boo = new Audio("https://cdn.pixabay.com/download/audio/2026/03/02/audio_157f6090dd.mp3?filename=dragon-studio-crowd-booing-494319.mp3");
@@ -3442,16 +3518,18 @@
                     if (!context) context = new AudioContextClass();
                     if (context.state === "suspended") context.resume().catch(() => { });
                 } catch { }
+                if (mediaUnlockAttempted) return;
+                mediaUnlockAttempted = true;
                 [cheer, boo].forEach(audio => {
-                    if (audio.dataset.unlocked === "true") return;
-                    const originalVolume = audio.volume;
-                    audio.volume = 0;
+                    audio.muted = true;
                     audio.play().then(() => {
-                        audio.pause();
-                        audio.currentTime = 0;
-                        audio.volume = originalVolume;
+                        if (!winnerPlaybackStarted) {
+                            audio.pause();
+                            audio.currentTime = 0;
+                        }
+                        audio.muted = false;
                         audio.dataset.unlocked = "true";
-                    }).catch(() => { audio.volume = originalVolume; });
+                    }).catch(() => { audio.muted = false; });
                 });
             }
 
@@ -3475,14 +3553,17 @@
                 playedGames.add(gameId);
                 try {
                     const key = `ginRummyWinSound:${gameId}`;
-                    if (sessionStorage.getItem(key)) return;
-                    sessionStorage.setItem(key, "played");
+                    if (localStorage.getItem(key)) return;
+                    localStorage.setItem(key, "played");
                 } catch { }
                 if (!enabled) return;
                 try {
+                    winnerPlaybackStarted = true;
                     const shouldBoo = johnMode && winnerName.trim().toLowerCase() !== "john";
                     const reaction = shouldBoo ? boo : cheer;
-                    reaction.pause();
+                    cheer.pause();
+                    boo.pause();
+                    reaction.muted = false;
                     reaction.currentTime = 0;
                     reaction.volume = shouldBoo ? 0.9 : 0.8;
                     reaction.play().catch(() => { });
@@ -3565,6 +3646,7 @@
         function showWinnerPopup() {
             const winner = determineWinner() || determineLeader();
             if (!winner) return;
+            const johnDisapproved = gameSounds.isJohnModeEnabled() && winner.name.trim().toLowerCase() !== "john";
 
             const wager = game.wager;
             const hasWager = wager && Number(wager.amount) > 0;
@@ -3622,7 +3704,8 @@
             }
 
             openModal(`
-        <div class="winner-popup">
+        <div class="winner-popup${johnDisapproved ? " john-disapproved" : ""}">
+            ${johnDisapproved ? '<div class="john-protest-stamp">Result accepted<br>under protest</div>' : ""}
             <div class="winner-title">${escapeHtml(winner.name)} WINS!</div>
             <div class="winner-score">Final score: ${getPlayerTotal(winner.id)}</div>
 
@@ -4037,7 +4120,11 @@
 
         menuButton.addEventListener("click", e => { e.stopPropagation(); toggleMenu() });
         gameMenu.addEventListener("click", handleMenuAction);
-        document.addEventListener("click", e => { if (!gameMenu.contains(e.target) && e.target !== menuButton) closeMenu() });
+        document.addEventListener("pointerdown", event => {
+            if (gameMenu.classList.contains("hidden")) return;
+            if (gameMenu.contains(event.target) || menuButton.contains(event.target)) return;
+            closeMenu();
+        }, true);
         modalBackdrop.addEventListener("click", e => { if (e.target === modalBackdrop) closeModal() });
         $("finishButton").onclick = finishGame;
         $("gameTimer").onclick = openTimerControls;
