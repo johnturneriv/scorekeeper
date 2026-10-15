@@ -80,7 +80,10 @@
 
         .brand {
             text-align: center;
-            line-height: .8
+            line-height: .8;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-touch-callout: none
         }
 
         .brand-suits {
@@ -2300,7 +2303,6 @@
                 <button data-action="theme">Change Theme</button>
                 <div class="menu-divider"></div>
                 <button id="soundToggleButton" data-action="sound" aria-pressed="true">Sound: On</button>
-                <button id="johnModeToggleButton" data-action="john-mode" aria-pressed="false">John Mode: Off</button>
                 <button data-action="settings">Winning Score</button>
                 <button data-action="delete" class="danger">Delete Current Game</button>
             </div>
@@ -2360,6 +2362,7 @@
         const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_M0WZYzUogTWROcl3egGAJg_X0G997_t";
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
         const APP_CONFIG = { minPlayers: 2, maxPlayers: 8, defaultWinningScore: 500, initialVisibleHands: 4 };
+        const JOHN_MODE_PIN = "1018";
         const DEFAULT_SAVED_PLAYERS = [];
         function createId() { return typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).slice(2) }
         function createEmptyHand() { return { id: createId(), scores: {} } }
@@ -3272,7 +3275,7 @@
             if (!game.players.some(p => p.id === playerId)) return;
             const saved = await playerRepository.load();
             if (game.id !== gameId || !game.players.some(p => p.id === playerId)) return;
-            openModal(`<div class="modal-head"><h3>choose player</h3><button class="close-btn" data-close-modal>×</button></div><div>${saved.length ? saved.map(item => `<div class="saved-player"><button class="saved-player-name" data-pick-saved="${item.id}">${escapeHtml(item.name)}</button></div>`).join("") : '<div class="empty-state">No saved players yet.</div>'}</div><button class="manual-name" id="manualNameButton">edit name manually</button><button class="manual-name" id="managePlayersButton">manage player list</button>`);
+            openModal(`<div class="modal-head"><h3>choose player</h3><button class="close-btn" data-close-modal>×</button></div><div>${saved.length ? saved.map(item => `<div class="saved-player"><button class="saved-player-name" data-pick-saved="${item.id}">${escapeHtml(item.name)}</button></div>`).join("") : '<div class="empty-state">No saved players yet.</div>'}</div><button class="manual-name" id="manualNameButton">edit name manually</button><button class="manual-name" id="managePlayersButton">manage player list</button><button class="manual-name" id="changeDealerButton">change dealer</button>`);
             modalCard.querySelector("[data-close-modal]").onclick = closeModal;
             modalCard.querySelectorAll("[data-pick-saved]").forEach(b => b.onclick = () => {
                 const selected = saved.find(item => item.id === b.dataset.pickSaved);
@@ -3287,6 +3290,7 @@
             });
             $("manualNameButton").onclick = () => renamePlayer(playerId);
             $("managePlayersButton").onclick = openPlayerListManager;
+            $("changeDealerButton").onclick = openDealerPicker;
         }
         function escapeHtml(value) { return String(value).replace(/[&<>'"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" }[c])) }
 
@@ -3400,18 +3404,34 @@
             try { enabled = localStorage.getItem("ginRummySoundEnabled") !== "false"; } catch { }
             try {
                 const savedJohnMode = localStorage.getItem("ginRummyJohnMode");
-                isJohnController = savedJohnMode !== null;
-                johnMode = isJohnController && savedJohnMode === "true";
+                const savedAuthorization = localStorage.getItem("ginRummyJohnModeAuthorized");
+                isJohnController = savedAuthorization === "true";
+                johnMode = savedJohnMode === "true";
             } catch { }
 
             function updateButtons() {
                 const soundButton = $("soundToggleButton");
-                const johnButton = $("johnModeToggleButton");
                 soundButton.textContent = `Sound: ${enabled ? "On" : "Off"}`;
                 soundButton.setAttribute("aria-pressed", String(enabled));
-                johnButton.hidden = !isJohnController;
-                johnButton.textContent = `John Mode: ${johnMode ? "On" : "Off"}`;
-                johnButton.setAttribute("aria-pressed", String(johnMode));
+                const statsButton = document.querySelector('.nav-btn[data-page="stats"]');
+                if (statsButton) statsButton.textContent = johnMode ? "STATS 🔥" : "STATS";
+            }
+
+            function authorizeJohnMode() {
+                const enteredPin = prompt("Enter John Mode code:");
+                if (enteredPin === null) return;
+                if (enteredPin.trim() !== JOHN_MODE_PIN) {
+                    showMessage("Incorrect John Mode code.");
+                    return;
+                }
+                isJohnController = true;
+                try { localStorage.setItem("ginRummyJohnModeAuthorized", "true"); } catch { }
+                johnMode = !johnMode;
+                try { localStorage.setItem("ginRummyJohnMode", String(johnMode)); } catch { }
+                if (johnMode) unlock();
+                updateButtons();
+                broadcastJohnMode();
+                showMessage(`John Mode ${johnMode ? "activated" : "deactivated"}.`);
             }
 
             function unlock() {
@@ -3488,28 +3508,51 @@
                 updateButtons();
                 closeMenu();
             };
-            function toggleJohnMode() {
-                if (!isJohnController) return;
-                johnMode = !johnMode;
-                try { localStorage.setItem("ginRummyJohnMode", String(johnMode)); } catch { }
-                if (johnMode) unlock();
+            function resetJohnMode() {
+                johnMode = false;
+                try { localStorage.setItem("ginRummyJohnMode", "false"); } catch { }
                 updateButtons();
                 broadcastJohnMode();
-                closeMenu();
             }
             updateButtons();
             return {
                 playWin,
-                toggleJohnMode,
+                resetJohnMode,
+                authorizeJohnMode,
                 isController: () => isJohnController,
                 isJohnModeEnabled: () => johnMode,
                 applySyncedJohnMode(value) {
-                    if (isJohnController) return;
                     johnMode = value === true;
+                    try { localStorage.setItem("ginRummyJohnMode", String(johnMode)); } catch { }
                     if (johnMode) unlock();
+                    updateButtons();
                 }
             };
         })();
+
+        function enableJohnModeUnlock() {
+            const brand = document.querySelector(".brand");
+            if (!brand) return;
+            let holdTimer = null;
+            let unlockedThisPress = false;
+            const cancelHold = () => {
+                clearTimeout(holdTimer);
+                holdTimer = null;
+            };
+            brand.addEventListener("pointerdown", event => {
+                if (event.pointerType === "mouse" && event.button !== 0) return;
+                unlockedThisPress = false;
+                cancelHold();
+                holdTimer = setTimeout(() => {
+                    unlockedThisPress = true;
+                    gameSounds.authorizeJohnMode();
+                }, 1500);
+            });
+            brand.addEventListener("pointerup", cancelHold);
+            brand.addEventListener("pointercancel", cancelHold);
+            brand.addEventListener("pointerleave", cancelHold);
+            brand.addEventListener("contextmenu", event => event.preventDefault());
+        }
 
         function playDetectedWinnerSound() {
             const winner = determineWinner();
@@ -3606,15 +3649,16 @@
             closeModal(); stopGameTimer(); game.hands = completedHands(); game.status = "finished"; game.finishedAt = new Date().toISOString(); game.updatedAt = game.finishedAt; game.winnerId = winnerId;
             await gameRepository.archive(game);
             broadcastStatsChanged();
+            gameSounds.resetJohnMode();
             unsubscribeFromGame();
             game = await gameRepository.create(); subscribeToGame(); renderGame(); await renderStats(); showPage("score"); showMessage("Game saved. New game created.")
         }
 
         async function deleteEndedGame() {
-            closeModal(); await gameRepository.deleteCurrentGame(); unsubscribeFromGame(); game = await gameRepository.create(); subscribeToGame(); renderGame(); showPage("score"); showMessage("Game deleted.")
+            closeModal(); gameSounds.resetJohnMode(); await gameRepository.deleteCurrentGame(); unsubscribeFromGame(); game = await gameRepository.create(); subscribeToGame(); renderGame(); showPage("score"); showMessage("Game deleted.")
         }
 
-        async function deleteGame() { if (!confirm("Delete this game? This cannot be undone.")) return; await gameRepository.deleteCurrentGame(); unsubscribeFromGame(); game = await gameRepository.create(); subscribeToGame(); renderGame(); showPage("score") }
+        async function deleteGame() { if (!confirm("Delete this game? This cannot be undone.")) return; gameSounds.resetJohnMode(); await gameRepository.deleteCurrentGame(); unsubscribeFromGame(); game = await gameRepository.create(); subscribeToGame(); renderGame(); showPage("score") }
         function openSettings() { const value = prompt("Winning score:", game.winningScore); if (!value) return; const score = Number(value); if (!Number.isFinite(score) || score <= 0) return showMessage("Enter a valid winning score."); game.winningScore = score; gameRepository.save(game); showMessage(`Winning score set to ${score}.`) }
         function joinGame() {
             openModal(`<div class="modal-head"><h3>join game</h3><button class="close-btn" data-close-modal>×</button></div><input id="joinGameCode" class="join-code-input" type="text" inputmode="numeric" maxlength="5" placeholder="00000" autocomplete="off"><div id="joinCodeError" class="join-code-error"></div><button id="submitJoinCode" class="manual-name">JOIN GAME</button>`);
@@ -3664,7 +3708,6 @@
             else if (a === "players") openPlayerListManager();
             else if (a === "remove-player") removePlayer();
             else if (a === "theme") openThemePicker();
-            else if (a === "john-mode") gameSounds.toggleJohnMode();
             else if (a === "settings") openSettings();
             else if (a === "delete") await deleteGame();
         }
@@ -3999,6 +4042,7 @@
         $("finishButton").onclick = finishGame;
         $("gameTimer").onclick = openTimerControls;
         $("addPlayerButton").onclick = addPlayer;
+        enableJohnModeUnlock();
         activateArchitectInfoPanel(".dealer-panel", openDealerPicker);
         activateArchitectInfoPanel(".timer-panel", () => $("gameTimer").click());
         activateArchitectInfoPanel(".wager-panel", () => $("wagerDisplay").click());
